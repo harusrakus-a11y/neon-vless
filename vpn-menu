@@ -18,7 +18,7 @@ HOST_FILE="/usr/local/etc/xray/fixed_host.txt"
 # Penjenamaan Kustom Baru Anda
 VERSION="Rakus Script v1.0"
 UPTIME=$(uptime -p | sed 's/up //')
-TOTAL_USERS=$(jq '.inbounds[0].settings.clients | length' $XRAY_CONFIG 2>/dev/null)
+TOTAL_USERS=$(jq '.inbounds.settings.clients | length' $XRAY_CONFIG 2>/dev/null)
 
 if [ -f "$HOST_FILE" ]; then FIXED_HOST=$(cat "$HOST_FILE"); else FIXED_HOST="harus.uhuk.fun"; echo "$FIXED_HOST" > "$HOST_FILE"; fi
 
@@ -30,18 +30,35 @@ URL_AKSES="${B1}${B2}/${USER_GH}/${REPO_GH}/${FILE_GH}?t=$(date +%s)"
 check_license() {
     local valid_keys=$(curl -sL -H "Cache-Control: no-cache" "$URL_AKSES")
     if [[ -z "$valid_keys" || "$valid_keys" == *"404"* ]]; then exit 1; fi
+    
     verify_process() {
         local input_key="$1"
         local match_line=$(echo "$valid_keys" | grep -w "^$input_key")
+        
         if [[ ! -z "$match_line" ]]; then
-            local exp_date=$(echo "$match_line" | cut -d'|' -f2)
-            if [ "$(date +%s)" -lt "$(date -d "$exp_date" +%s 2>/dev/null)" ]; then
-                export USER_EXP_DATE="$exp_date"
-                return 0
+            # Memeriksa jika ada simbol '|' untuk tarikh luput
+            if [[ "$match_line" == *"|"* ]]; then
+                local exp_date=$(echo "$match_line" | cut -d'|' -f2)
+                local current_epoch=$(date +%s)
+                local exp_epoch=$(date -d "$exp_date" +%s 2>/dev/null)
+                
+                if [[ ! -z "$exp_epoch" ]]; then
+                    if [ "$current_epoch" -lt "$exp_epoch" ]; then
+                        export USER_EXP_DATE="$exp_date"
+                        return 0
+                    else
+                        echo -e "\n${RED}✗ Akses Ditamatkan: Lesen anda telah TAMAT TEMPOH pada ($exp_date)!${NC}"
+                        exit 1
+                    fi
+                fi
             fi
+            # Jika tiada tarikh luput, aktif selamanya
+            export USER_EXP_DATE="Selamanya"
+            return 0
         fi
         return 1
     }
+    
     if [ -f "$LICENSE_FILE" ] && verify_process "$(cat $LICENSE_FILE)"; then return 0; fi
     clear
     echo -e "${CYAN}=====================================================${NC}"
@@ -93,9 +110,8 @@ create_account() {
 
     uuid=$(uuidgen)
     
-    # Injeksi akaun ke fail config JSON menggunakan jq (Inbound 0 & 1)
-    jq ".inbounds[0].settings.clients += [{\"id\": \"$uuid\", \"email\": \"$username\"}] |
-        .inbounds[1].settings.clients += [{\"id\": \"$uuid\", \"email\": \"$username\"}]" $XRAY_CONFIG > /tmp/x.json && mv /tmp/x.json $XRAY_CONFIG
+    jq ".inbounds.settings.clients += [{\"id\": \"$uuid\", \"email\": \"$username\"}] |
+        .inbounds.settings.clients += [{\"id\": \"$uuid\", \"email\": \"$username\"}]" $XRAY_CONFIG > /tmp/x.json && mv /tmp/x.json $XRAY_CONFIG
     systemctl restart xray 2>/dev/null
     
     clear
