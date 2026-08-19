@@ -17,7 +17,7 @@ HOST_FILE="/usr/local/etc/xray/fixed_host.txt"
 
 VERSION="Rakus Script v1.0"
 UPTIME=$(uptime -p | sed 's/up //')
-TOTAL_USERS=$(jq '.inbounds[0].settings.clients | length' $XRAY_CONFIG 2>/dev/null)
+TOTAL_USERS=$(jq '.inbounds.settings.clients | length' $XRAY_CONFIG 2>/dev/null)
 
 if [ -f "$HOST_FILE" ]; then FIXED_HOST=$(cat "$HOST_FILE"); else FIXED_HOST="harus.uhuk.fun"; echo "$FIXED_HOST" > "$HOST_FILE"; fi
 
@@ -67,49 +67,29 @@ show_dashboard() {
     echo -e "${CYAN}─────────────────────────────────────────────────────${NC}"
 }
 
-block_manager() {
-    clear
-    echo -e "${RED}[ BLOCK MANAGER ]${NC}\n"
-    echo -e " 1. Aktifkan Penapis Iklan Premium (Super AdBlock)\n 2. Kembali"
-    read -p " Pilih jenis sekatan [1-2]: " block_choice
-    case $block_choice in
-        1)
-            # LOGIK REAL: Menyuntik senarai domain iklan terus ke dalam blok .dns.hosts (Sangat selamat & kalis crash)
-            jq '.dns.hosts += {
-                "geosite:category-ads-all": "127.0.0.1",
-                "doubleclick.net": "127.0.0.1",
-                "googleads.g.doubleclick.net": "127.0.0.1",
-                "://googlesyndication.com": "127.0.0.1",
-                "://google.com": "127.0.0.1",
-                "shockvpn.com": "127.0.0.1",
-                "popads.net": "127.0.0.1",
-                "popcash.net": "127.0.0.1",
-                "propellerads.com": "127.0.0.1",
-                "adsterra.com": "127.0.0.1"
-            }' $XRAY_CONFIG > /tmp/x.json && mv /tmp/x.json $XRAY_CONFIG
-            systemctl restart xray
-            echo -e "\n${GREEN}✓ Sistem Super AdBlock diaktifkan secara selamat!${NC}"; sleep 2 ;;
-        *) return ;;
-    esac
-}
-
 routing_manager() {
     while true; do
         clear
         echo -e "${CYAN}┌───────────────────────────────────────────────────┐${NC}"
         echo -e "│${PURPLE}                 ROUTING MANAGER                   ${CYAN}│${NC}"
         echo -e "└───────────────────────────────────────────────────┘${NC}"
-        echo -e "  ${GREEN}1.${NC} BLOCK MANAGER (Aktifkan AdBlock)"
-        echo -e "  ${GREEN}2.${NC} Reset Semua Tetapan Iklan Ke Asal"
-        echo -e "  ${RED}3.${NC} Back to Main Menu"
-        read -p " Sila pilih pilihan anda [1-3]: " r_choice
-        case $r_choice in
-            1) block_manager ;;
-            2)
-                # Mengembalikan tetapan hosts DNS asal yang bersih
-                jq '.dns.hosts = {"geosite:category-ads-all": "127.0.0.1"}' $XRAY_CONFIG > /tmp/x.json && mv /tmp/x.json $XRAY_CONFIG
+        echo -e "  ${GREEN}1.${NC} Aktifkan Penapis Iklan Premium (AdGuard DNS)"
+        echo -e "  ${GREEN}2.${NC} Reset Penapis Iklan Ke Asal"
+        echo -e "  ${RED}3.${NC} Kembali Ke Menu Utama"
+        echo -e "${CYAN}─────────────────────────────────────────────────────${NC}"
+        read -p " Pilihan anda [1-3]: " rc
+        case $rc in
+            1)
+                echo -e "nameserver 94.140.14.14\nnameserver 94.140.15.15" > /etc/resolv.conf
+                jq '.dns.servers = ["94.140.14.14", "94.140.15.15", "1.1.1.1"]' $XRAY_CONFIG > /tmp/x.json && mv /tmp/x.json $XRAY_CONFIG
                 systemctl restart xray
-                echo -e "\n${GREEN}✓ Semua tetapan penapis iklan telah di-reset!${NC}"; sleep 2 ;;
+                echo -e "\n${GREEN}✓ Sistem AdGuard DNS Premium (100% Kalis Iklan) Aktif!${NC}"; sleep 2 ;;
+            2)
+                systemctl restart systemd-resolved 2>/dev/null
+                echo -e "nameserver 1.1.1.1" > /etc/resolv.conf
+                jq '.dns.servers = ["1.1.1.1"]' $XRAY_CONFIG > /tmp/x.json && mv /tmp/x.json $XRAY_CONFIG
+                systemctl restart xray
+                echo -e "\n${GREEN}✓ Penapis iklan telah di-reset ke asal!${NC}"; sleep 2 ;;
             3) break ;;
         esac
     done
@@ -130,15 +110,16 @@ create_account() {
     esac
     uuid=$(uuidgen)
     
-    # Memasukkan data ke dalam inbound port 80 (Index 0) dan port 8080 (Index 1) secara tersusun
     jq ".inbounds[0].settings.clients += [{\"id\": \"$uuid\", \"email\": \"$username\"}] |
         .inbounds[1].settings.clients += [{\"id\": \"$uuid\", \"email\": \"$username\"}]" $XRAY_CONFIG > /tmp/x.json && mv /tmp/x.json $XRAY_CONFIG
     systemctl restart xray 2>/dev/null
     
     clear
     echo -e "${GREEN}✓ Akaun Berjaya Ditambah!${NC}"
+    echo -e "${CYAN}─────────────────────────────────────────────────────${NC}"
     echo -e " Port 80: ${GREEN}vless://${uuid}@${T_IP}:80?encryption=none&type=ws&host=${FIXED_HOST}&path=%2F#${username}${NC}\n"
     echo -e " Port 8080: ${GREEN}vless://${uuid}@${T_IP}:8080?encryption=none&type=ws&host=${FIXED_HOST}&path=%2F#${username}${NC}"
+    echo -e "${CYAN}─────────────────────────────────────────────────────${NC}"
     read -n 1 -s -r -p "Tekan mana-mana butang..."
 }
 
