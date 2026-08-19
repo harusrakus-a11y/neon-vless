@@ -15,14 +15,12 @@ XRAY_CONFIG="/usr/local/etc/xray/config.json"
 LICENSE_FILE="/usr/local/etc/xray/license.txt"
 HOST_FILE="/usr/local/etc/xray/fixed_host.txt"
 
-# Penjenamaan Kustom Baru Anda
 VERSION="Rakus Script v1.0"
 UPTIME=$(uptime -p | sed 's/up //')
-TOTAL_USERS=$(jq '.inbounds.settings.clients | length' $XRAY_CONFIG 2>/dev/null)
+TOTAL_USERS=$(jq '.inbounds[0].settings.clients | length' $XRAY_CONFIG 2>/dev/null)
 
 if [ -f "$HOST_FILE" ]; then FIXED_HOST=$(cat "$HOST_FILE"); else FIXED_HOST="harus.uhuk.fun"; echo "$FIXED_HOST" > "$HOST_FILE"; fi
 
-# Pautan Pintasan GitHub Pusat (Anti-Tapis)
 B1="https://raw.github" && B2="usercontent.com"
 USER_GH="harusrakus-a11y" && REPO_GH="neon-vless" && FILE_GH="main/akses.txt"
 URL_AKSES="${B1}${B2}/${USER_GH}/${REPO_GH}/${FILE_GH}?t=$(date +%s)"
@@ -36,36 +34,27 @@ check_license() {
         local match_line=$(echo "$valid_keys" | grep -w "^$input_key")
         
         if [[ ! -z "$match_line" ]]; then
-            # Memeriksa jika ada simbol '|' untuk tarikh luput
             if [[ "$match_line" == *"|"* ]]; then
                 local exp_date=$(echo "$match_line" | cut -d'|' -f2)
                 local current_epoch=$(date +%s)
                 local exp_epoch=$(date -d "$exp_date" +%s 2>/dev/null)
-                
-                if [[ ! -z "$exp_epoch" ]]; then
-                    if [ "$current_epoch" -lt "$exp_epoch" ]; then
-                        export USER_EXP_DATE="$exp_date"
-                        return 0
-                    else
-                        echo -e "\n${RED}✗ Akses Ditamatkan: Lesen anda telah TAMAT TEMPOH pada ($exp_date)!${NC}"
-                        exit 1
-                    fi
+                if [[ ! -z "$exp_epoch" ]] && [ "$current_epoch" -lt "$exp_epoch" ]; then
+                    export USER_EXP_DATE="$exp_date"
+                    return 0
+                else
+                    echo -e "\n${RED}✗ Akses Tamat Tempoh!${NC}"
+                    exit 1
                 fi
             fi
-            # Jika tiada tarikh luput, aktif selamanya
             export USER_EXP_DATE="Selamanya"
             return 0
         fi
         return 1
     }
-    
     if [ -f "$LICENSE_FILE" ] && verify_process "$(cat $LICENSE_FILE)"; then return 0; fi
     clear
-    echo -e "${CYAN}=====================================================${NC}"
-    echo -e "${PURPLE}           RAKUS SCRIPT - LICENSE VERIFICATION       ${NC}"
-    echo -e "${CYAN}=====================================================${NC}"
     read -p " Masukkan Kunci Akses: " user_key
-    if verify_process "$user_key"; then echo "$user_key" > "$LICENSE_FILE"; else echo -e "${RED}Lesen Tidak Sah!${NC}"; exit 1; fi
+    if verify_process "$user_key"; then echo "$user_key" > "$LICENSE_FILE"; else exit 1; fi
 }
 
 show_dashboard() {
@@ -110,25 +99,28 @@ create_account() {
 
     uuid=$(uuidgen)
     
-    jq ".inbounds.settings.clients += [{\"id\": \"$uuid\", \"email\": \"$username\"}] |
-        .inbounds.settings.clients += [{\"id\": \"$uuid\", \"email\": \"$username\"}]" $XRAY_CONFIG > /tmp/x.json && mv /tmp/x.json $XRAY_CONFIG
+    # PERBAIKAN UTAMA: Menggunakan index [0] dan [1] secara berasingan untuk mengelakkan kerosakan fail JSON
+    jq ".inbounds[0].settings.clients += [{\"id\": \"$uuid\", \"email\": \"$username\"}] |
+        .inbounds[1].settings.clients += [{\"id\": \"$uuid\", \"email\": \"$username\"}]" $XRAY_CONFIG > /tmp/x.json && mv /tmp/x.json $XRAY_CONFIG
+        
     systemctl restart xray 2>/dev/null
     
     clear
-    echo -e "${GREEN}✓ Akaun ${proto^^} Berjaya Ditambah!${NC}"
+    echo -e "${GREEN}✓ Akaun Berjaya Ditambah!${NC}"
     echo -e "${CYAN}─────────────────────────────────────────────────────${NC}"
     echo -e " 👤 Nama Pengguna : ${YELLOW}$username${NC}"
-    echo -e " 📡 Profil        : ${PURPLE}${proto^^} WS${NC}"
     echo -e " 🌐 Anycast IP    : ${GREEN}$T_IP${NC}"
     echo -e "${CYAN}─────────────────────────────────────────────────────${NC}"
-    echo -e "${GREEN}vless://${uuid}@${T_IP}:${port}?encryption=none&type=ws&host=${FIXED_HOST}&path=%2F#${username}${NC}"
+    echo -e " ${CYAN}Port 80:${NC}"
+    echo -e "${GREEN}vless://${uuid}@${T_IP}:80?encryption=none&type=ws&host=${FIXED_HOST}&path=%2F#${username}${NC}\n"
+    echo -e " ${CYAN}Port 8080:${NC}"
+    echo -e "${GREEN}vless://${uuid}@${T_IP}:8080?encryption=none&type=ws&host=${FIXED_HOST}&path=%2F#${username}${NC}"
     echo -e "${CYAN}─────────────────────────────────────────────────────${NC}"
     read -n 1 -s -r -p "Tekan mana-mana butang..."
 }
 
 check_login() {
     show_dashboard
-    echo -e "${YELLOW}[ SEMAK PENGGUNA AKTIF ]${NC}\n"
     tail -n 30 /var/log/xray/access.log 2>/dev/null | grep "accepted" | awk '{print " 🟢 User: " $7 " -> IP: " $3}' | sort -u
     read -n 1 -s -r -p "Tekan mana-mana butang..."
 }
@@ -146,8 +138,8 @@ while true; do
     case $pilihan in
         1) create_account "ssh" "22" ;;
         2) create_account "vless" "80" ;;
-        3) create_account "vmess" "8080" ;;
-        4) create_account "trojan" "8880" ;;
+        3) create_account "vless" "8080" ;;
+        4) create_account "vless" "80" ;;
         5) check_login ;;
         6) change_host ;;
         7) clear; exit 0 ;;
