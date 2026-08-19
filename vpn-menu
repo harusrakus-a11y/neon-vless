@@ -136,14 +136,59 @@ check_login() {
     read -n 1 -s -r -p "Tekan mana-mana butang..."
 }
 
+
+block_manager() {
+    clear
+    echo -e "${RED}[ BLOCK MANAGER - RAKUS SCRIPT ]${NC}\n"
+    echo -e " Pilihan Sekatan Rangkaian:"
+    echo -e "  ${YELLOW}1.${NC} Sekat Laman Web Lucah (PornBlock)"
+    echo -e "  ${YELLOW}2.${NC} Sekat Muat Turun Torrent (Anti-Torrent)"
+    echo -e "  ${YELLOW}3.${NC} Sekat Iklan & Tracker (AdBlock)"
+    echo -e "  ${RED}4.${NC} Kembali"
+    echo -e "${CYAN}─────────────────────────────────────────────────────${NC}"
+    read -p " Pilih jenis sekatan [1-4]: " block_choice
+    case $block_choice in
+        1)
+            jq '.routing += {"domainStrategy": "IPOnDemand"} | .outbounds += [{"protocol": "blackhole", "tag": "blocked"}] | .routing.rules += [{"type": "field", "outboundTag": "blocked", "domain": ["porn", "xxx", "sex", "adult"]}]' $XRAY_CONFIG > /tmp/x.json && mv /tmp/x.json $XRAY_CONFIG
+            systemctl restart xray && echo -e "\n${GREEN}✓ Laman web pornografi berjaya disekat!${NC}" && sleep 2 ;;
+        2)
+            jq '.routing += {"domainStrategy": "IPOnDemand"} | .outbounds += [{"protocol": "blackhole", "tag": "blocked"}] | .routing.rules += [{"type": "field", "outboundTag": "blocked", "protocol": ["bittorrent"]}]' $XRAY_CONFIG > /tmp/x.json && mv /tmp/x.json $XRAY_CONFIG
+            systemctl restart xray && echo -e "\n${GREEN}✓ Aktiviti Torrent berjaya disekat!${NC}" && sleep 2 ;;
+        3)
+            jq '.routing += {"domainStrategy": "IPOnDemand"} | .outbounds += [{"protocol": "blackhole", "tag": "blocked"}] | .routing.rules += [{"type": "field", "outboundTag": "blocked", "domain": ["doubleclick.net", "googleads", "pagead", "adservice", "adsystem", "analytics", "telemetry"]}]' $XRAY_CONFIG > /tmp/x.json && mv /tmp/x.json $XRAY_CONFIG
+            systemctl restart xray && echo -e "\n${GREEN}✓ Sistem AdBlock Ringan diaktifkan!${NC}" && sleep 2 ;;
+    esac
+}
+
+domain_manager() {
+    clear
+    echo -e "${YELLOW}[ DOMAIN MANAGER - RAKUS SCRIPT ]${NC}\n"
+    read -p " Masukkan domain yang ingin disekat (cth: facebook.com): " bad_dom
+    if [[ ! -z "$bad_dom" ]]; then
+        jq --arg dom "$bad_dom" '.routing += {"domainStrategy": "IPOnDemand"} | .outbounds += [{"protocol": "blackhole", "tag": "blocked"} ] | .routing.rules += [{"type": "field", "outboundTag": "blocked", "domain": [$dom]}]' $XRAY_CONFIG > /tmp/x.json && mv /tmp/x.json $XRAY_CONFIG
+        systemctl restart xray && echo -e "\n${GREEN}✓ Domain $bad_dom berjaya disekat!${NC}" && sleep 2
+    fi
+}
 routing_manager() {
     while true; do
         clear
         echo -e "${CYAN}┌───────────────────────────────────────────────────┐${NC}"
         echo -e "│${PURPLE}                 ROUTING MANAGER                   ${CYAN}│${NC}"
         echo -e "└───────────────────────────────────────────────────┘${NC}"
-        echo -e "  1. BLOCK MANAGER (Simulasi)\n  2. DOMAIN MANAGER (Simulasi)\n  3. Kembali"
-        read -p " Pilihan: " rc; [ "$rc" == "3" ] && break
+        echo -e "  ${GREEN}1.${NC} BLOCK MANAGER (Sekat Lucah/Torrent/Iklan)"
+        echo -e "  ${GREEN}2.${NC} DOMAIN MANAGER (Sekat Web Kustom)"
+        echo -e "  ${GREEN}3.${NC} Reset Semua Aturan Sekatan Ke Asal"
+        echo -e "  ${RED}4.${NC} Kembali Ke Menu Utama"
+        echo -e "${CYAN}─────────────────────────────────────────────────────${NC}"
+        read -p " Pilihan anda [1-4]: " rc
+        case $rc in
+            1) block_manager ;;
+            2) domain_manager ;;
+            3)
+                jq '.routing.rules = [] | del(.outbounds[] | select(.tag == blocked))' $XRAY_CONFIG > /tmp/x.json && mv /tmp/x.json $XRAY_CONFIG
+                systemctl restart xray && echo -e "\n${GREEN}✓ Semua tetapan sekatan dipadamkan!${NC}" && sleep 2 ;;
+            4) break ;;
+        esac
     done
 }
 
