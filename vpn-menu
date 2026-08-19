@@ -11,21 +11,22 @@ XRAY_CONFIG="/usr/local/etc/xray/config.json"
 FIXED_HOST="harus.uhuk.fun"
 LICENSE_FILE="/usr/local/etc/xray/license.txt"
 
-# Pautan mentah ke fail akses anda di GitHub (Menggunakan teknik anti-potong)
 USER_GITHUB="harusrakus-a11y"
 REPO_GITHUB="neon-vless"
-URL_AKSES="https://githubusercontent.com"
+
+# Menambahkan parameter buster cache (?t=$(date +%s)) untuk memintas kelewatan kemas kini GitHub 404
+URL_AKSES="https://githubusercontent.com\$(date +%s)"
 
 check_license() {
-    # 1. Muat turun senarai lesen terkini dari GitHub secara senyap
-    local valid_keys=$(curl -sL "$URL_AKSES")
+    # Muat turun senarai lesen tanpa menggunakan cache pelayan lama
+    local valid_keys=$(curl -sL -H "Cache-Control: no-cache" "$URL_AKSES")
     
-    if [[ -z "$valid_keys" ]]; then
-        echo -e "${RED}Ralat: Gagal menghubungi pelayan pengesahan. Sila semak rangkaian internet VPS anda.${NC}"
+    if [[ -z "$valid_keys" || "$valid_keys" == *"404"* ]]; then
+        echo -e "${RED}Ralat: Pangkalan data pusat kosong atau tidak ditemui di GitHub.${NC}"
+        echo -e "${YELLOW}Pastikan fail akses.txt wujud di dalam repository neon-vless anda.${NC}"
         exit 1
     fi
 
-    # 2. Semak jika pengguna sudah mengaktifkan lesen sebelum ini
     if [ -f "$LICENSE_FILE" ]; then
         CURRENT_KEY=$(cat "$LICENSE_FILE")
         if echo "$valid_keys" | grep -qxF "$CURRENT_KEY"; then
@@ -33,7 +34,6 @@ check_license() {
         fi
     fi
 
-    # 3. Jika belum ada atau lesen lama dipadam dari GitHub, minta lesen baru
     clear
     echo -e "${CYAN}🚀=================================================🚀${NC}"
     echo -e "${PURPLE}           NEON TUNNEL - REMOTE AUTHENTICATION       ${NC}"
@@ -42,14 +42,13 @@ check_license() {
     echo -e "${CYAN}---------------------------------------------------${NC}"
     read -p " Masukkan Kunci Akses / Nama User: " user_key
 
-    # Menyemak jika input pengguna wujud dalam senarai fail akses.txt GitHub
     if echo "$valid_keys" | grep -qxF "$user_key"; then
         echo "$user_key" > "$LICENSE_FILE"
         echo -e "\n${GREEN}✓ Akses Dibenarkan! Selamat datang.${NC}"
         sleep 2
         return 0
     else
-        echo -e "\n${RED}✗ Ralat: Nama User / Kunci Akses Tidak Sah atau Ditamatkan!${NC}"
+        echo -e "\n${RED}✗ Ralat: Nama User / Kunci Akses Tidak Sah!${NC}"
         echo -e "${YELLOW}Sila hubungi pemilik skrip untuk pendaftaran akaun.${NC}"
         sleep 3
         exit 1
@@ -127,7 +126,6 @@ create_vless() {
     read -n 1 -s -r -p "Tekan mana-mana butang untuk kembali ke menu..."
 }
 
-# Menjalankan sekatan semakan live dari GitHub sebelum buka skrip
 check_license
 
 while true; do
