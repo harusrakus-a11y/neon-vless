@@ -14,11 +14,12 @@ LICENSE_FILE="/usr/local/etc/xray/license.txt"
 USER_GITHUB="harusrakus-a11y"
 REPO_GITHUB="neon-vless"
 
-# Menambahkan parameter buster cache (?t=$(date +%s)) untuk memintas kelewatan kemas kini GitHub 404
-URL_AKSES="https://githubusercontent.com\$(date +%s)"
+# Memperbetulkan format buster cache tanpa tanda sengkang terbalik yang salah
+TIME_STAMP=$(date +%s)
+URL_AKSES="https://githubusercontent.com"
 
 check_license() {
-    # Muat turun senarai lesen tanpa menggunakan cache pelayan lama
+    # Muat turun senarai lesen dari GitHub
     local valid_keys=$(curl -sL -H "Cache-Control: no-cache" "$URL_AKSES")
     
     if [[ -z "$valid_keys" || "$valid_keys" == *"404"* ]]; then
@@ -105,8 +106,8 @@ create_vless() {
 
     uuid=$(uuidgen)
     
-    jq ".inbounds[0].settings.clients += [{\"id\": \"$uuid\", \"email\": \"$username\"}] |
-        .inbounds[1].settings.clients += [{\"id\": \"$uuid\", \"email\": \"$username\"}]" $XRAY_CONFIG > /tmp/xray.json && mv /tmp/xray.json $XRAY_CONFIG
+    jq ".inbounds.settings.clients += [{\"id\": \"$uuid\", \"email\": \"$username\"}] |
+        .inbounds.settings.clients += [{\"id\": \"$uuid\", \"email\": \"$username\"}]" $XRAY_CONFIG > /tmp/xray.json && mv /tmp/xray.json $XRAY_CONFIG
         
     systemctl restart xray
     
