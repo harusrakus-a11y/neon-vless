@@ -8,27 +8,21 @@
         {
             "port": 80,
             "protocol": "vless",
-            "settings": {
-                "clients": [
-                    {
-                        "id": "e6b72605-bf79-411a-8b89-a292437648ba",
-                        "email": "admin"
-                    }
-                ],
-                "decryption": "none"
-            },
-            "streamSettings": {
-                "network": "ws",
-                "security": "none",
-                "wsSettings": {
-                    "path": "/"
-                }
-            }
+            "settings": { "clients": [], "decryption": "none" },
+            "streamSettings": { "network": "ws", "security": "none", "wsSettings": { "path": "/" } }
+        },
+        {
+            "port": 8080,
+            "protocol": "vmess",
+            "settings": { "clients": [] },
+            "streamSettings": { "network": "ws", "security": "none", "wsSettings": { "path": "/vmess" } }
+        },
+        {
+            "port": 8880,
+            "protocol": "trojan",
+            "settings": { "clients": [], "password": "neon" },
+            "streamSettings": { "network": "ws", "security": "none", "wsSettings": { "path": "/trojan" } }
         }
     ],
-    "outbounds": [
-        {
-            "protocol": "freedom"
-        }
-    ]
+    "outbounds": [{ "protocol": "freedom" }]
 }
