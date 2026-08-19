@@ -77,6 +77,27 @@ show_dashboard() {
 # ===================================================
 # SUB-MENU 1: ROUTING MANAGER
 # ===================================================
+block_manager() {
+    clear
+    echo -e "${RED}[ BLOCK MANAGER ]${NC}\n"
+    echo -e " 1. Sekat Lucah (PornBlock)\n 2. Sekat Torrent\n 3. Sekat Iklan\n 4. Kembali"
+    read -p " Pilih [1-4]: " bc
+    case $bc in
+        1) jq ".outbounds += [{\"protocol\": \"blackhole\", \"tag\": \"block_p\"}] | .routing.rules += [{\"type\": \"field\", \"outboundTag\": \"block_p\", \"domain\": [\"geosite:category-porn\"]}]" $XRAY_CONFIG > /tmp/x.json && mv /tmp/x.json $XRAY_CONFIG && systemctl restart xray && echo "✓ Diskat!"; sleep 2 ;;
+        2) jq ".outbounds += [{\"protocol\": \"blackhole\", \"tag\": \"block_t\"}] | .routing.rules += [{\"type\": \"field\", \"outboundTag\": \"block_t\", \"protocol\": [\"bittorrent\"]}]" $XRAY_CONFIG > /tmp/x.json && mv /tmp/x.json $XRAY_CONFIG && systemctl restart xray && echo "✓ Torrent Disekat!"; sleep 2 ;;
+        3) jq ".outbounds += [{\"protocol\": \"blackhole\", \"tag\": \"block_a\"}] | .routing.rules += [{\"type\": \"field\", \"outboundTag\": \"block_a\", \"domain\": [\"geosite:category-ads-all\"]}]" $XRAY_CONFIG > /tmp/x.json && mv /tmp/x.json $XRAY_CONFIG && systemctl restart xray && echo "✓ Iklan Disekat!"; sleep 2 ;;
+    esac
+}
+
+domain_manager() {
+    clear
+    echo -e "${YELLOW}[ DOMAIN MANAGER ]${NC}\n"
+    read -p " Masukkan domain nak sekat (cth: tiktok.com): " bad_dom
+    [ -z "$bad_dom" ] && return
+    jq --arg dom "$bad_dom" ".outbounds += [{\"protocol\": \"blackhole\", \"tag\": \"block_c\"}] | .routing.rules += [{\"type\": \"field\", \"outboundTag\": \"block_c\", \"domain\": [\$dom]}]" $XRAY_CONFIG > /tmp/x.json && mv /tmp/x.json $XRAY_CONFIG && systemctl restart xray
+    echo "✓ Domain $bad_dom disekat!"; sleep 2
+}
+
 routing_manager() {
     while true; do
         clear
@@ -162,7 +183,8 @@ dns_manager() {
         echo -e "${CYAN}─────────────────────────────────────────────────────${NC}"
         read -p " Select option: " d_choice
         case $d_choice in
-            9|x) break ;;
+            6) jq "del(.routing.rules) | del(.outbounds[] | select(.tag | tr \"[:upper:]\" \"[:lower:]\" | contains(\"block\")))" $XRAY_CONFIG > /tmp/x.json && mv /tmp/x.json $XRAY_CONFIG && systemctl restart xray && echo "✓ Reset Selesai!"; sleep 2 ;;
+            10|x) break ;;
             *) echo -e "${GREEN}DNS dikemaskini (Simulasi)!${NC}"; sleep 1 ;;
         esac
     done
