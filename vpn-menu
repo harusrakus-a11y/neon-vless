@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# ===================================================
+# TEMA WARNA (RAKUS SCRIPT PREMIUM STYLE)
+# ===================================================
 CYAN='\033[0;36m'
 PURPLE='\033[0;35m'
 GREEN='\033[0;32m'
@@ -24,23 +27,58 @@ URL_AKSES="${B1}${B2}/${USER_GH}/${REPO_GH}/${FILE_GH}?t=$(date +%s)"
 
 check_license() {
     local valid_keys=$(curl -sL -H "Cache-Control: no-cache" "$URL_AKSES")
-    if [[ -z "$valid_keys" || "$valid_keys" == *"404"* ]]; then return 0; fi
+    if [[ -z "$valid_keys" || "$valid_keys" == *"404"* ]]; then 
+        echo -e "${RED}Ralat: Pangkalan data pusat tidak ditemui di GitHub!${NC}"
+        exit 1
+    fi
+
     verify_process() {
         local input_key="$1"
         local match_line=$(echo "$valid_keys" | grep -w "^$input_key")
+        
         if [[ ! -z "$match_line" ]]; then
-            local exp_date=$(echo "$match_line" | cut -d'|' -f2)
-            if [ "$(date +%s)" -lt "$(date -d "$exp_date" +%s 2>/dev/null)" ]; then
-                export USER_EXP_DATE="$exp_date"
-                return 0
+            # Jika ada tanda '|', maksudnya ada tarikh luput diletakkan
+            if [[ "$match_line" == *"|"* ]]; then
+                local exp_date=$(echo "$match_line" | cut -d'|' -f2)
+                
+                # Memastikan tarikh tidak kosong
+                if [[ ! -z "$exp_date" ]]; then
+                    local current_epoch=$(date +%s)
+                    local exp_epoch=$(date -d "$exp_date" +%s 2>/dev/null)
+                    
+                    if [[ ! -z "$exp_epoch" ]]; then
+                        if [ "$current_epoch" -lt "$exp_epoch" ]; then
+                            export USER_EXP_DATE="$exp_date"
+                            return 0
+                        else
+                            echo -e "\n${RED}✗ Akses Tamat Tempoh pada $exp_date!${NC}"
+                            exit 1
+                        fi
+                    fi
+                fi
             fi
+            # Jika tiada tarikh luput dikesan, setkan sebagai aktif selamanya
+            export USER_EXP_DATE="Selamanya"
+            return 0
         fi
         return 1
     }
+
     if [ -f "$LICENSE_FILE" ] && verify_process "$(cat $LICENSE_FILE)"; then return 0; fi
+    
     clear
+    echo -e "${CYAN}🚀===================================================🚀${NC}"
+    echo -e "${PURPLE}           RAKUS SCRIPT - LICENSE VERIFICATION       ${NC}"
+    echo -e "${CYAN}=====================================================:${NC}"
     read -p " Masukkan Kunci Akses: " user_key
-    if verify_process "$user_key"; then echo "$user_key" > "$LICENSE_FILE"; else exit 1; fi
+    
+    if verify_process "$user_key"; then
+        echo "$user_key" > "$LICENSE_FILE"
+        return 0
+    else
+        echo -e "${RED}Akses Ditolak: Nama user atau token tiada dalam GitHub!${NC}"
+        exit 1
+    fi
 }
 
 show_dashboard() {
@@ -70,9 +108,7 @@ create_account() {
     esac
     uuid=$(uuidgen)
     
-    # LOGIK KLON RE-STABIL: Menyuntik masuk ke index array inbound ke-0 (.inbounds[0]) secara tepat
     jq ".inbounds[0].settings.clients += [{\"id\": \"$uuid\", \"email\": \"$username\"}]" $XRAY_CONFIG > /tmp/x.json && mv /tmp/x.json $XRAY_CONFIG
-    
     systemctl restart xray 2>/dev/null
     
     clear
