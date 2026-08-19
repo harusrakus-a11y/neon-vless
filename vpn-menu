@@ -9,6 +9,49 @@ NC='\033[0m'
 
 XRAY_CONFIG="/usr/local/etc/xray/config.json"
 FIXED_HOST="harus.uhuk.fun"
+LICENSE_FILE="/usr/local/etc/xray/license.txt"
+
+# ===================================================
+# SENARAI KUNCI LESEN YANG DIBENARKAN (Ganti di sini)
+# ===================================================
+# Anda boleh menambah seberapa banyak lesen yang anda mahu di dalam senarai ini
+VALID_KEYS=("lanun-vip-99" "uhuk-premium-77" "admin-akses-00" "kawan-baik-99")
+
+check_license() {
+    # Semak jika pengguna sudah mengaktifkan lesen sebelum ini
+    if [ -f "$LICENSE_FILE" ]; then
+        CURRENT_KEY=$(cat "$LICENSE_FILE")
+        for key in "${VALID_KEYS[@]}"; do
+            if [ "$CURRENT_KEY" == "$key" ]; then
+                return 0
+            fi
+        done
+    fi
+
+    # Jika tiada lesen sah disimpan, minta pengguna masukkan lesen baharu
+    clear
+    echo -e "${CYAN}🚀=================================================🚀${NC}"
+    echo -e "${PURPLE}           NEON TUNNEL - LICENSE VERIFICATION        ${NC}"
+    echo -e "${CYAN}===================================================:${NC}"
+    echo -e "${YELLOW}Skrip ini dilindungi. Sila masukkan Kunci Lesen anda.${NC}"
+    echo -e "${CYAN}---------------------------------------------------${NC}"
+    read -p " Masukkan Kunci Lesen: " user_key
+
+    # Menyemak kunci input pengguna dengan senarai VALID_KEYS
+    for key in "${VALID_KEYS[@]}"; do
+        if [ "$user_key" == "$key" ]; then
+            echo "$user_key" > "$LICENSE_FILE"
+            echo -e "\n${GREEN}✓ Pengesahan Berjaya! Selamat datang.${NC}"
+            sleep 2
+            return 0
+        fi
+    done
+
+    echo -e "\n${RED}✗ Ralat: Kunci Lesen Tidak Sah atau Tamat Tempoh!${NC}"
+    echo -e "${YELLOW}Sila hubungi pemilik skrip untuk mendapatkan akses.${NC}"
+    sleep 3
+    exit 1
+}
 
 show_header() {
     clear
@@ -80,6 +123,9 @@ create_vless() {
     echo -e "${CYAN}---------------------------------------------------${NC}"
     read -n 1 -s -r -p "Tekan mana-mana butang untuk kembali ke menu..."
 }
+
+# Jalankan semakan lesen sebelum membuka keseluruhan menu utama
+check_license
 
 while true; do
     show_header
