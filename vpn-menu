@@ -11,15 +11,18 @@ XRAY_CONFIG="/usr/local/etc/xray/config.json"
 FIXED_HOST="harus.uhuk.fun"
 LICENSE_FILE="/usr/local/etc/xray/license.txt"
 
-USER_GITHUB="harusrakus-a11y"
-REPO_GITHUB="neon-vless"
+# Membina URL GitHub secara selamat (Pintasan 100% Anti-Potong Pautan)
+B1="https://raw.github"
+B2="usercontent.com"
+USER_GH="harusrakus-a11y"
+REPO_GH="neon-vless"
+FILE_GH="main/akses.txt"
 
-# Memperbetulkan format buster cache tanpa tanda sengkang terbalik yang salah
 TIME_STAMP=$(date +%s)
-URL_AKSES="https://githubusercontent.com"
+URL_AKSES="${B1}${B2}/${USER_GH}/${REPO_GH}/${FILE_GH}?t=${TIME_STAMP}"
 
 check_license() {
-    # Muat turun senarai lesen dari GitHub
+    # Muat turun senarai akses dengan memintas cache
     local valid_keys=$(curl -sL -H "Cache-Control: no-cache" "$URL_AKSES")
     
     if [[ -z "$valid_keys" || "$valid_keys" == *"404"* ]]; then
