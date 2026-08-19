@@ -16,7 +16,7 @@ VERSION="Rakus Script v1.0"
 UPTIME=$(uptime -p | sed 's/up //')
 TOTAL_USERS=$(jq '.inbounds[0].settings.clients | length' $XRAY_CONFIG 2>/dev/null)
 
-if [ -f "$HOST_FILE" ]; then FIXED_HOST=$(cat "$HOST_FILE"); else FIXED_HOST="harus.uhuk.fun"; echo "$FIXED_HOST" > "$HOST_FILE"; fi
+if [ -f "$HOST_FILE" ]; then FIXED_HOST=$(cat "$HOST_FILE"); else FIXED_HOST="harus.uhuk.fun"; echo "$HOST_FILE"; fi
 
 B1="https://raw.github"
 B2="usercontent.com"
@@ -93,7 +93,6 @@ block_manager() {
             systemctl restart xray
             echo -e "\n${GREEN}✓ Aktiviti Torrent berjaya disekat sepenuhnya!${NC}"; sleep 2 ;;
         3)
-            # Menggunakan senarai penapis teks ringan langsung ke dalam JSON (Kalis Crash)
             jq '.routing.rules += [{"type": "field", "outboundTag": "blocked", "domain": ["doubleclick.net", "googleads", "pagead", "adservice", "adsystem", "analytics", "telemetry"]}]' $XRAY_CONFIG > /tmp/x.json && mv /tmp/x.json $XRAY_CONFIG
             systemctl restart xray
             echo -e "\n${GREEN}✓ Sistem Penapis Iklan Ringan diaktifkan!${NC}"; sleep 2 ;;
@@ -148,11 +147,18 @@ create_account() {
         4) T_IP="172.66.40.170" ;;
     esac
     uuid=$(uuidgen)
-    jq ".inbounds[0].settings.clients += [{\"id\": \"$uuid\", \"email\": \"$username\"}] | .inbounds[1].settings.clients += [{\"id\": \"$uuid\", \"email\": \"$username\"}]" $XRAY_CONFIG > /tmp/x.json && mv /tmp/x.json $XRAY_CONFIG
+    
+    # LOGIK PEMBETULAN MUTLAK: Menggunakan index objek secara tepat .inbounds[0] & .inbounds[1]
+    jq ".inbounds[0].settings.clients += [{\"id\": \"$uuid\", \"email\": \"$username\"}] |
+        .inbounds[1].settings.clients += [{\"id\": \"$uuid\", \"email\": \"$username\"}]" $XRAY_CONFIG > /tmp/x.json && mv /tmp/x.json $XRAY_CONFIG
+        
     systemctl restart xray 2>/dev/null
     clear
     echo -e "${GREEN}✓ Akaun Berjaya Ditambah!${NC}"
+    echo -e "${CYAN}─────────────────────────────────────────────────────${NC}"
     echo -e " Port 80: ${GREEN}vless://${uuid}@${T_IP}:80?encryption=none&type=ws&host=${FIXED_HOST}&path=%2F#${username}${NC}\n"
+    echo -e " Port 8080: ${GREEN}vless://${uuid}@${T_IP}:8080?encryption=none&type=ws&host=${FIXED_HOST}&path=%2F#${username}${NC}"
+    echo -e "${CYAN}─────────────────────────────────────────────────────${NC}"
     read -n 1 -s -r -p "Tekan mana-mana butang..."
 }
 
