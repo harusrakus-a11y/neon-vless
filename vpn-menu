@@ -11,46 +11,49 @@ XRAY_CONFIG="/usr/local/etc/xray/config.json"
 FIXED_HOST="harus.uhuk.fun"
 LICENSE_FILE="/usr/local/etc/xray/license.txt"
 
-# ===================================================
-# SENARAI KUNCI LESEN YANG DIBENARKAN (Ganti di sini)
-# ===================================================
-# Anda boleh menambah seberapa banyak lesen yang anda mahu di dalam senarai ini
-VALID_KEYS=("lanun-vip-99" "uhuk-premium-77" "admin-akses-00" "kawan-baik-99")
+# Pautan mentah ke fail akses anda di GitHub (Menggunakan teknik anti-potong)
+USER_GITHUB="harusrakus-a11y"
+REPO_GITHUB="neon-vless"
+URL_AKSES="https://githubusercontent.com"
 
 check_license() {
-    # Semak jika pengguna sudah mengaktifkan lesen sebelum ini
-    if [ -f "$LICENSE_FILE" ]; then
-        CURRENT_KEY=$(cat "$LICENSE_FILE")
-        for key in "${VALID_KEYS[@]}"; do
-            if [ "$CURRENT_KEY" == "$key" ]; then
-                return 0
-            fi
-        done
+    # 1. Muat turun senarai lesen terkini dari GitHub secara senyap
+    local valid_keys=$(curl -sL "$URL_AKSES")
+    
+    if [[ -z "$valid_keys" ]]; then
+        echo -e "${RED}Ralat: Gagal menghubungi pelayan pengesahan. Sila semak rangkaian internet VPS anda.${NC}"
+        exit 1
     fi
 
-    # Jika tiada lesen sah disimpan, minta pengguna masukkan lesen baharu
-    clear
-    echo -e "${CYAN}🚀=================================================🚀${NC}"
-    echo -e "${PURPLE}           NEON TUNNEL - LICENSE VERIFICATION        ${NC}"
-    echo -e "${CYAN}===================================================:${NC}"
-    echo -e "${YELLOW}Skrip ini dilindungi. Sila masukkan Kunci Lesen anda.${NC}"
-    echo -e "${CYAN}---------------------------------------------------${NC}"
-    read -p " Masukkan Kunci Lesen: " user_key
-
-    # Menyemak kunci input pengguna dengan senarai VALID_KEYS
-    for key in "${VALID_KEYS[@]}"; do
-        if [ "$user_key" == "$key" ]; then
-            echo "$user_key" > "$LICENSE_FILE"
-            echo -e "\n${GREEN}✓ Pengesahan Berjaya! Selamat datang.${NC}"
-            sleep 2
+    # 2. Semak jika pengguna sudah mengaktifkan lesen sebelum ini
+    if [ -f "$LICENSE_FILE" ]; then
+        CURRENT_KEY=$(cat "$LICENSE_FILE")
+        if echo "$valid_keys" | grep -qxF "$CURRENT_KEY"; then
             return 0
         fi
-    done
+    fi
 
-    echo -e "\n${RED}✗ Ralat: Kunci Lesen Tidak Sah atau Tamat Tempoh!${NC}"
-    echo -e "${YELLOW}Sila hubungi pemilik skrip untuk mendapatkan akses.${NC}"
-    sleep 3
-    exit 1
+    # 3. Jika belum ada atau lesen lama dipadam dari GitHub, minta lesen baru
+    clear
+    echo -e "${CYAN}🚀=================================================🚀${NC}"
+    echo -e "${PURPLE}           NEON TUNNEL - REMOTE AUTHENTICATION       ${NC}"
+    echo -e "${CYAN}===================================================:${NC}"
+    echo -e "${YELLOW}Skrip ini dilindungi. Sila masukkan Kunci Akses anda.${NC}"
+    echo -e "${CYAN}---------------------------------------------------${NC}"
+    read -p " Masukkan Kunci Akses / Nama User: " user_key
+
+    # Menyemak jika input pengguna wujud dalam senarai fail akses.txt GitHub
+    if echo "$valid_keys" | grep -qxF "$user_key"; then
+        echo "$user_key" > "$LICENSE_FILE"
+        echo -e "\n${GREEN}✓ Akses Dibenarkan! Selamat datang.${NC}"
+        sleep 2
+        return 0
+    else
+        echo -e "\n${RED}✗ Ralat: Nama User / Kunci Akses Tidak Sah atau Ditamatkan!${NC}"
+        echo -e "${YELLOW}Sila hubungi pemilik skrip untuk pendaftaran akaun.${NC}"
+        sleep 3
+        exit 1
+    fi
 }
 
 show_header() {
@@ -124,7 +127,7 @@ create_vless() {
     read -n 1 -s -r -p "Tekan mana-mana butang untuk kembali ke menu..."
 }
 
-# Jalankan semakan lesen sebelum membuka keseluruhan menu utama
+# Menjalankan sekatan semakan live dari GitHub sebelum buka skrip
 check_license
 
 while true; do
