@@ -1,8 +1,5 @@
 #!/bin/bash
 
-# ===================================================
-# TEMA WARNA (RAKUS SCRIPT PREMIUM STYLE)
-# ===================================================
 CYAN='\033[0;36m'
 PURPLE='\033[0;35m'
 GREEN='\033[0;32m'
@@ -21,7 +18,6 @@ TOTAL_USERS=$(jq '.inbounds.settings.clients | length' $XRAY_CONFIG 2>/dev/null)
 
 if [ -f "$HOST_FILE" ]; then FIXED_HOST=$(cat "$HOST_FILE"); else FIXED_HOST="harus.uhuk.fun"; echo "$FIXED_HOST" > "$HOST_FILE"; fi
 
-# Alamat Penggeser Cache GitHub (Anti-Potong)
 B1="https://raw.github"
 B2="usercontent.com"
 USER_GH="harusrakus-a11y"
@@ -33,16 +29,11 @@ URL_AKSES="${B1}${B2}/${USER_GH}/${REPO_GH}/${FILE_GH}?t=${TIME_STAMP}"
 
 check_license() {
     local valid_keys=$(curl -sL -H "Cache-Control: no-cache" "$URL_AKSES")
-    
-    if [[ -z "$valid_keys" || "$valid_keys" == *"404"* ]]; then
-        echo -e "${RED}Ralat: Pangkalan data pusat kosong atau tidak ditemui di GitHub.${NC}"
-        exit 1
-    fi
+    if [[ -z "$valid_keys" || "$valid_keys" == *"404"* ]]; then exit 1; fi
 
     verify_process() {
         local input_key="$1"
         local match_line=$(echo "$valid_keys" | grep -w "^$input_key")
-        
         if [[ ! -z "$match_line" ]]; then
             if [[ "$match_line" == *"|"* ]]; then
                 local exp_date=$(echo "$match_line" | cut -d'|' -f2)
@@ -52,7 +43,6 @@ check_license() {
                     export USER_EXP_DATE="$exp_date"
                     return 0
                 else
-                    echo -e "\n${RED}✗ Akses Tamat Tempoh!${NC}"
                     exit 1
                 fi
             fi
@@ -62,22 +52,10 @@ check_license() {
         return 1
     }
 
-    if [ -f "$LICENSE_FILE" ] && verify_process "$(cat $LICENSE_FILE)"; then
-        return 0
-    fi
-
+    if [ -f "$LICENSE_FILE" ] && verify_process "$(cat $LICENSE_FILE)"; then return 0; fi
     clear
-    echo -e "${CYAN}🚀===================================================🚀${NC}"
-    echo -e "${PURPLE}           RAKUS SCRIPT - LICENSE VERIFICATION       ${NC}"
-    echo -e "${CYAN}=====================================================:${NC}"
     read -p " Masukkan Kunci Akses: " user_key
-    if verify_process "$user_key"; then
-        echo "$user_key" > "$LICENSE_FILE"
-        return 0
-    else
-        echo -e "${RED}Lesen Tidak Sah!${NC}"
-        exit 1
-    fi
+    if verify_process "$user_key"; then echo "$user_key" > "$LICENSE_FILE"; else exit 1; fi
 }
 
 show_dashboard() {
@@ -103,21 +81,21 @@ show_dashboard() {
 block_manager() {
     clear
     echo -e "${RED}[ BLOCK MANAGER ]${NC}\n"
-    echo -e " 1. Sekat Laman Web Lucah (PornBlock)\n 2. Sekat Torrent\n 3. Sekat Iklan\n 4. Kembali"
+    echo -e " 1. Sekat Laman Web Lucah (PornBlock)\n 2. Sekat Torrent\n 3. Sekat Iklan (Super AdBlock Premium)\n 4. Kembali"
     read -p " Pilih jenis sekatan [1-4]: " block_choice
     case $block_choice in
         1)
-            jq '.outbounds += [{"protocol": "blackhole", "tag": "blocked_porn"}] | .routing.rules += [{"type": "field", "outboundTag": "blocked_porn", "domain": ["geosite:category-porn"]}]' $XRAY_CONFIG > /tmp/x.json && mv /tmp/x.json $XRAY_CONFIG
+            jq 'del(.routing.rules[] | select(.outboundTag == "blocked_porn")) | .outbounds += [{"protocol": "blackhole", "tag": "blocked_porn"}] | .routing.rules += [{"type": "field", "outboundTag": "blocked_porn", "domain": ["geosite:category-porn"]}]' $XRAY_CONFIG > /tmp/x.json && mv /tmp/x.json $XRAY_CONFIG
             systemctl restart xray
             echo -e "\n${GREEN}✓ Laman web pornografi berjaya disekat!${NC}"; sleep 2 ;;
         2)
-            jq '.outbounds += [{"protocol": "blackhole", "tag": "blocked_torrent"}] | .routing.rules += [{"type": "field", "outboundTag": "blocked_torrent", "protocol": ["bittorrent"]}]' $XRAY_CONFIG > /tmp/x.json && mv /tmp/x.json $XRAY_CONFIG
+            jq 'del(.routing.rules[] | select(.outboundTag == "blocked_torrent")) | .outbounds += [{"protocol": "blackhole", "tag": "blocked_torrent"}] | .routing.rules += [{"type": "field", "outboundTag": "blocked_torrent", "protocol": ["bittorrent"]}]' $XRAY_CONFIG > /tmp/x.json && mv /tmp/x.json $XRAY_CONFIG
             systemctl restart xray
             echo -e "\n${GREEN}✓ Aktiviti Torrent berjaya disekat sepenuhnya!${NC}"; sleep 2 ;;
         3)
-            jq '.outbounds += [{"protocol": "blackhole", "tag": "blocked_ads"}] | .routing.rules += [{"type": "field", "outboundTag": "blocked_ads", "domain": ["geosite:category-ads-all"]}]' $XRAY_CONFIG > /tmp/x.json && mv /tmp/x.json $XRAY_CONFIG
+            jq 'del(.routing.rules[] | select(.outboundTag == "blocked_ads")) | .outbounds += [{"protocol": "blackhole", "tag": "blocked_ads"}] | .routing.rules += [{"type": "field", "outboundTag": "blocked_ads", "domain": ["geosite:category-ads-all", "geosite:cryptominers"]}]' $XRAY_CONFIG > /tmp/x.json && mv /tmp/x.json $XRAY_CONFIG
             systemctl restart xray
-            echo -e "\n${GREEN}✓ Sistem Penapis Iklan diaktifkan!${NC}"; sleep 2 ;;
+            echo -e "\n${GREEN}✓ Sistem Super AdBlock Premium diaktifkan!${NC}"; sleep 2 ;;
     esac
 }
 
@@ -169,7 +147,7 @@ create_account() {
         4) T_IP="172.66.40.170" ;;
     esac
     uuid=$(uuidgen)
-    jq ".inbounds[0].settings.clients += [{\"id\": \"$uuid\", \"email\": \"$username\"}] | .inbounds[1].settings.clients += [{\"id\": \"$uuid\", \"email\": \"$username\"}]" $XRAY_CONFIG > /tmp/x.json && mv /tmp/x.json $XRAY_CONFIG
+    jq ".inbounds.settings.clients += [{\"id\": \"$uuid\", \"email\": \"$username\"}] | .inbounds.settings.clients += [{\"id\": \"$uuid\", \"email\": \"$username\"}]" $XRAY_CONFIG > /tmp/x.json && mv /tmp/x.json $XRAY_CONFIG
     systemctl restart xray 2>/dev/null
     clear
     echo -e "${GREEN}✓ Akaun Berjaya Ditambah!${NC}"
