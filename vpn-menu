@@ -1,8 +1,5 @@
 #!/bin/bash
 
-# ===================================================
-# TEMA WARNA (RAKUS SCRIPT PREMIUM STYLE)
-# ===================================================
 CYAN='\033[0;36m'
 PURPLE='\033[0;35m'
 GREEN='\033[0;32m'
@@ -12,8 +9,8 @@ WHITE='\033[1;37m'
 NC='\033[0m' 
 
 XRAY_CONFIG="/usr/local/etc/xray/config.json"
-LICENSE_FILE="/usr/local/etc/xray/license.txt"
 HOST_FILE="/usr/local/etc/xray/fixed_host.txt"
+LICENSE_FILE="/usr/local/etc/xray/license.txt"
 
 VERSION="Rakus Script v1.0"
 UPTIME=$(uptime -p | sed 's/up //')
@@ -21,40 +18,25 @@ TOTAL_USERS=$(jq '.inbounds[0].settings.clients | length' $XRAY_CONFIG 2>/dev/nu
 
 if [ -f "$HOST_FILE" ]; then FIXED_HOST=$(cat "$HOST_FILE"); else FIXED_HOST="harus.uhuk.fun"; echo "$FIXED_HOST" > "$HOST_FILE"; fi
 
-B1="https://raw.github"
-B2="usercontent.com"
-USER_GH="harusrakus-a11y"
-REPO_GH="neon-vless"
-FILE_GH="main/akses.txt"
-
-TIME_STAMP=$(date +%s)
-URL_AKSES="${B1}${B2}/${USER_GH}/${REPO_GH}/${FILE_GH}?t=${TIME_STAMP}"
+B1="https://raw.github" && B2="usercontent.com"
+USER_GH="harusrakus-a11y" && REPO_GH="neon-vless" && FILE_GH="main/akses.txt"
+URL_AKSES="${B1}${B2}/${USER_GH}/${REPO_GH}/${FILE_GH}?t=$(date +%s)"
 
 check_license() {
     local valid_keys=$(curl -sL -H "Cache-Control: no-cache" "$URL_AKSES")
-    if [[ -z "$valid_keys" || "$valid_keys" == *"404"* ]]; then exit 1; fi
-
+    if [[ -z "$valid_keys" || "$valid_keys" == *"404"* ]]; then return 0; fi
     verify_process() {
         local input_key="$1"
         local match_line=$(echo "$valid_keys" | grep -w "^$input_key")
         if [[ ! -z "$match_line" ]]; then
-            if [[ "$match_line" == *"|"* ]]; then
-                local exp_date=$(echo "$match_line" | cut -d'|' -f2)
-                local current_epoch=$(date +%s)
-                local exp_epoch=$(date -d "$exp_date" +%s 2>/dev/null)
-                if [[ ! -z "$exp_epoch" ]] && [ "$current_epoch" -lt "$exp_epoch" ]; then
-                    export USER_EXP_DATE="$exp_date"
-                    return 0
-                else
-                    exit 1
-                fi
+            local exp_date=$(echo "$match_line" | cut -d'|' -f2)
+            if [ "$(date +%s)" -lt "$(date -d "$exp_date" +%s 2>/dev/null)" ]; then
+                export USER_EXP_DATE="$exp_date"
+                return 0
             fi
-            export USER_EXP_DATE="Selamanya"
-            return 0
         fi
         return 1
     }
-
     if [ -f "$LICENSE_FILE" ] && verify_process "$(cat $LICENSE_FILE)"; then return 0; fi
     clear
     read -p " Masukkan Kunci Akses: " user_key
@@ -66,74 +48,10 @@ show_dashboard() {
     echo -e "${CYAN}┌───────────────────────────────────────────────────┐${NC}"
     echo -e "${CYAN}│${PURPLE}              PREMIUM AUTOSCRIPT ${VERSION}          ${CYAN}│${NC}"
     echo -e "${CYAN}└───────────────────────────────────────────────────┘${NC}"
-    echo -e " ${PURPLE}• RAKUS SCRIPT SYSTEM INFO •${NC}"
     echo -e " Version          : ${GREEN}${VERSION}${NC}"
-    echo -e " Server Uptime    : ${YELLOW}${UPTIME}${NC}"
     echo -e " Target Fixed SNI : ${WHITE}${FIXED_HOST}${NC}"
     echo -e " Total Users      : ${GREEN}${TOTAL_USERS:-0} Users${NC}"
     echo -e "${CYAN}─────────────────────────────────────────────────────${NC}"
-    echo -e " ${PURPLE}• MAIN MENU PROTOCOL & MANAGER •${NC}"
-    echo -e "  ${GREEN}1.${NC} Create Account VLESS (Port 80/8080)"
-    echo -e "  ${GREEN}2.${NC} Check Active User Login (Live)"
-    echo -e "  ${GREEN}3.${NC} ROUTING MANAGER (Block/Domain Site)"
-    echo -e "  ${GREEN}4.${NC} Change Target Fixed SNI / Domain"
-    echo -e "  ${RED}5.${NC} Exit Script"
-    echo -e "${CYAN}─────────────────────────────────────────────────────${NC}"
-}
-
-block_manager() {
-    clear
-    echo -e "${RED}[ BLOCK MANAGER ]${NC}\n"
-    echo -e " 1. Sekat Laman Web Lucah (PornBlock)\n 2. Sekat Torrent\n 3. Sekat Iklan & Tracker (Light AdBlock)\n 4. Kembali"
-    read -p " Pilih jenis sekatan [1-4]: " block_choice
-    case $block_choice in
-        1)
-            jq '.routing.rules += [{"type": "field", "outboundTag": "blocked", "domain": ["porn", "xxx", "sex", "adult"]}]' $XRAY_CONFIG > /tmp/x.json && mv /tmp/x.json $XRAY_CONFIG
-            systemctl restart xray
-            echo -e "\n${GREEN}✓ Kata kunci pornografi berjaya disekat!${NC}"; sleep 2 ;;
-        2)
-            jq '.routing.rules += [{"type": "field", "outboundTag": "blocked", "protocol": ["bittorrent"]}]' $XRAY_CONFIG > /tmp/x.json && mv /tmp/x.json $XRAY_CONFIG
-            systemctl restart xray
-            echo -e "\n${GREEN}✓ Aktiviti Torrent berjaya disekat sepenuhnya!${NC}"; sleep 2 ;;
-        3)
-            jq '.routing.rules += [{"type": "field", "outboundTag": "blocked", "domain": ["doubleclick.net", "googleads", "pagead", "adservice", "adsystem", "analytics", "telemetry"]}]' $XRAY_CONFIG > /tmp/x.json && mv /tmp/x.json $XRAY_CONFIG
-            systemctl restart xray
-            echo -e "\n${GREEN}✓ Sistem Penapis Iklan Ringan diaktifkan!${NC}"; sleep 2 ;;
-    esac
-}
-
-domain_manager() {
-    clear
-    echo -e "${YELLOW}[ DOMAIN MANAGER ]${NC}\n"
-    read -p " Masukkan nama domain yang ingin disekat (cth: facebook.com): " bad_domain
-    if [[ -z "$bad_domain" ]]; then return; fi
-    jq --arg dom "$bad_domain" '.routing.rules += [{"type": "field", "outboundTag": "blocked", "domain": [$dom]}]' $XRAY_CONFIG > /tmp/x.json && mv /tmp/x.json $XRAY_CONFIG
-    systemctl restart xray
-    echo -e "\n${GREEN}✓ Domain [ $bad_domain ] telah disenaraihitamkan!${NC}"
-    read -n 1 -s -r -p "Tekan mana-mana butang..."
-}
-
-routing_manager() {
-    while true; do
-        clear
-        echo -e "${CYAN}┌───────────────────────────────────────────────────┐${NC}"
-        echo -e "${CYAN}│${PURPLE}                 ROUTING MANAGER                   ${CYAN}│${NC}"
-        echo -e "${CYAN}└───────────────────────────────────────────────────┘${NC}"
-        echo -e "  ${GREEN}1.${NC} BLOCK MANAGER (Sekat Lucah/Torrent/Iklan)"
-        echo -e "  ${GREEN}2.${NC} DOMAIN MANAGER (Sekat Web Kustom)"
-        echo -e "  ${GREEN}3.${NC} Reset Routing To Default"
-        echo -e "  ${RED}4.${NC} Back to Main Menu"
-        read -p " Sila pilih pilihan anda [1-4]: " r_choice
-        case $r_choice in
-            1) block_manager ;;
-            2) domain_manager ;;
-            3)
-                jq '.routing.rules = []' $XRAY_CONFIG > /tmp/x.json && mv /tmp/x.json $XRAY_CONFIG
-                systemctl restart xray
-                echo -e "\n${GREEN}✓ Semua tetapan sekatan di-reset ke asal!${NC}"; sleep 2 ;;
-            4) break ;;
-        esac
-    done
 }
 
 create_account() {
@@ -141,6 +59,7 @@ create_account() {
     echo -e "${YELLOW}[ JANA AKAUN VLESS MULTI-TELCO ]${NC}\n"
     read -p " Masukkan Nama Pengguna Baru: " username
     if [[ -z "$username" ]]; then return; fi
+    
     echo -e "\nPilih IP Anycast Telco:\n 1. DIGI (104.18.20.212)\n 2. YES (104.17.148.22)\n 3. MAXIS (172.66.43.86)\n 4. UMOBILE (172.66.40.170)"
     read -p " Pilihan anda [1-4]: " t_choice
     case $t_choice in
@@ -151,41 +70,28 @@ create_account() {
     esac
     uuid=$(uuidgen)
     
-    # KUNCI JAWAPAN PEMBETULAN: Memasukkan data ke index tatasusunan .inbounds[0] dan .inbounds[1] secara spesifik
-    jq ".inbounds[0].settings.clients += [{\"id\": \"$uuid\", \"email\": \"$username\"}] |
-        .inbounds[1].settings.clients += [{\"id\": \"$uuid\", \"email\": \"$username\"}]" $XRAY_CONFIG > /tmp/x.json && mv /tmp/x.json $XRAY_CONFIG
-        
+    # LOGIK KLON RE-STABIL: Menyuntik masuk ke index array inbound ke-0 (.inbounds[0]) secara tepat
+    jq ".inbounds[0].settings.clients += [{\"id\": \"$uuid\", \"email\": \"$username\"}]" $XRAY_CONFIG > /tmp/x.json && mv /tmp/x.json $XRAY_CONFIG
+    
     systemctl restart xray 2>/dev/null
+    
     clear
     echo -e "${GREEN}✓ Akaun Berjaya Ditambah!${NC}"
     echo -e "${CYAN}─────────────────────────────────────────────────────${NC}"
     echo -e " Port 80: ${GREEN}vless://${uuid}@${T_IP}:80?encryption=none&type=ws&host=${FIXED_HOST}&path=%2F#${username}${NC}\n"
-    echo -e " Port 8080: ${GREEN}vless://${uuid}@${T_IP}:8080?encryption=none&type=ws&host=${FIXED_HOST}&path=%2F#${username}${NC}"
     echo -e "${CYAN}─────────────────────────────────────────────────────${NC}"
     read -n 1 -s -r -p "Tekan mana-mana butang..."
-}
-
-check_login() {
-    show_dashboard
-    tail -n 30 /var/log/xray/access.log 2>/dev/null | grep "accepted" | awk '{print " 🟢 User: " $7 " -> IP: " $3}' | sort -u
-    read -n 1 -s -r -p "Tekan mana-mana butang..."
-}
-
-change_host() {
-    show_dashboard
-    read -p " Masukkan Fixed Host Baru: " new_host
-    if [[ ! -z "$new_host" ]]; then echo "$new_host" > "$HOST_FILE"; FIXED_HOST="$new_host"; fi
 }
 
 check_license
 while true; do
     show_dashboard
-    read -p " Sila Pilih Menu Anda [1-5]: " pilihan
+    echo -e "  ${GREEN}1.${NC} Create Account VLESS (Port 80)"
+    echo -e "  ${RED}2.${NC} Exit Script"
+    echo -e "${CYAN}=====================================================:${NC}"
+    read -p " Pilih Pilihan Anda [1-2]: " pilihan
     case $pilihan in
         1) create_account ;;
-        2) check_login ;;
-        3) routing_manager ;;
-        4) change_host ;;
-        5) clear; exit 0 ;;
+        2) clear; exit 0 ;;
     esac
 done

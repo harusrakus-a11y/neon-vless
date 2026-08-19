@@ -9,22 +9,12 @@
             "port": 80,
             "protocol": "vless",
             "settings": {
-                "clients": [],
-                "decryption": "none"
-            },
-            "streamSettings": {
-                "network": "ws",
-                "security": "none",
-                "wsSettings": {
-                    "path": "/"
-                }
-            }
-        },
-        {
-            "port": 8080,
-            "protocol": "vless",
-            "settings": {
-                "clients": [],
+                "clients": [
+                    {
+                        "id": "e6b72605-bf79-411a-8b89-a292437648ba",
+                        "email": "admin"
+                    }
+                ],
                 "decryption": "none"
             },
             "streamSettings": {
@@ -38,32 +28,7 @@
     ],
     "outbounds": [
         {
-            "protocol": "freedom",
-            "tag": "direct"
-        },
-        {
-            "protocol": "blackhole",
-            "tag": "blocked"
+            "protocol": "freedom"
         }
-    ],
-    "routing": {
-        "domainStrategy": "IPOnDemand",
-        "rules": [
-            {
-                "type": "field",
-                "outboundTag": "blocked",
-                "domain": [
-                    "geosite:category-ads-all",
-                    "geosite:cryptominers",
-                    "doubleclick.net",
-                    "googleads",
-                    "pagead",
-                    "adservice",
-                    "adsystem",
-                    "analytics",
-                    "telemetry"
-                ]
-            }
-        ]
-    }
+    ]
 }
