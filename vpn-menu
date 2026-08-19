@@ -14,7 +14,7 @@ HOST_FILE="/usr/local/etc/xray/fixed_host.txt"
 
 VERSION="Rakus Script v1.0"
 UPTIME=$(uptime -p | sed 's/up //')
-TOTAL_USERS=$(jq '.inbounds.settings.clients | length' $XRAY_CONFIG 2>/dev/null)
+TOTAL_USERS=$(jq '.inbounds[0].settings.clients | length' $XRAY_CONFIG 2>/dev/null)
 
 if [ -f "$HOST_FILE" ]; then FIXED_HOST=$(cat "$HOST_FILE"); else FIXED_HOST="harus.uhuk.fun"; echo "$FIXED_HOST" > "$HOST_FILE"; fi
 
@@ -81,21 +81,22 @@ show_dashboard() {
 block_manager() {
     clear
     echo -e "${RED}[ BLOCK MANAGER ]${NC}\n"
-    echo -e " 1. Sekat Laman Web Lucah (PornBlock)\n 2. Sekat Torrent\n 3. Sekat Iklan (Super AdBlock Premium)\n 4. Kembali"
+    echo -e " 1. Sekat Laman Web Lucah (PornBlock)\n 2. Sekat Torrent\n 3. Sekat Iklan & Tracker (Light AdBlock)\n 4. Kembali"
     read -p " Pilih jenis sekatan [1-4]: " block_choice
     case $block_choice in
         1)
-            jq 'del(.routing.rules[] | select(.outboundTag == "blocked_porn")) | .outbounds += [{"protocol": "blackhole", "tag": "blocked_porn"}] | .routing.rules += [{"type": "field", "outboundTag": "blocked_porn", "domain": ["geosite:category-porn"]}]' $XRAY_CONFIG > /tmp/x.json && mv /tmp/x.json $XRAY_CONFIG
+            jq '.routing.rules += [{"type": "field", "outboundTag": "blocked", "domain": ["porn", "xxx", "sex", "adult"]}]' $XRAY_CONFIG > /tmp/x.json && mv /tmp/x.json $XRAY_CONFIG
             systemctl restart xray
-            echo -e "\n${GREEN}✓ Laman web pornografi berjaya disekat!${NC}"; sleep 2 ;;
+            echo -e "\n${GREEN}✓ Kata kunci pornografi berjaya disekat!${NC}"; sleep 2 ;;
         2)
-            jq 'del(.routing.rules[] | select(.outboundTag == "blocked_torrent")) | .outbounds += [{"protocol": "blackhole", "tag": "blocked_torrent"}] | .routing.rules += [{"type": "field", "outboundTag": "blocked_torrent", "protocol": ["bittorrent"]}]' $XRAY_CONFIG > /tmp/x.json && mv /tmp/x.json $XRAY_CONFIG
+            jq '.routing.rules += [{"type": "field", "outboundTag": "blocked", "protocol": ["bittorrent"]}]' $XRAY_CONFIG > /tmp/x.json && mv /tmp/x.json $XRAY_CONFIG
             systemctl restart xray
             echo -e "\n${GREEN}✓ Aktiviti Torrent berjaya disekat sepenuhnya!${NC}"; sleep 2 ;;
         3)
-            jq 'del(.routing.rules[] | select(.outboundTag == "blocked_ads")) | .outbounds += [{"protocol": "blackhole", "tag": "blocked_ads"}] | .routing.rules += [{"type": "field", "outboundTag": "blocked_ads", "domain": ["geosite:category-ads-all", "geosite:cryptominers"]}]' $XRAY_CONFIG > /tmp/x.json && mv /tmp/x.json $XRAY_CONFIG
+            # Menggunakan senarai penapis teks ringan langsung ke dalam JSON (Kalis Crash)
+            jq '.routing.rules += [{"type": "field", "outboundTag": "blocked", "domain": ["doubleclick.net", "googleads", "pagead", "adservice", "adsystem", "analytics", "telemetry"]}]' $XRAY_CONFIG > /tmp/x.json && mv /tmp/x.json $XRAY_CONFIG
             systemctl restart xray
-            echo -e "\n${GREEN}✓ Sistem Super AdBlock Premium diaktifkan!${NC}"; sleep 2 ;;
+            echo -e "\n${GREEN}✓ Sistem Penapis Iklan Ringan diaktifkan!${NC}"; sleep 2 ;;
     esac
 }
 
@@ -104,7 +105,7 @@ domain_manager() {
     echo -e "${YELLOW}[ DOMAIN MANAGER ]${NC}\n"
     read -p " Masukkan nama domain yang ingin disekat (cth: facebook.com): " bad_domain
     if [[ -z "$bad_domain" ]]; then return; fi
-    jq --arg dom "$bad_domain" '.outbounds += [{"protocol": "blackhole", "tag": "custom_block"}] | .routing.rules += [{"type": "field", "outboundTag": "custom_block", "domain": [$dom]}]' $XRAY_CONFIG > /tmp/x.json && mv /tmp/x.json $XRAY_CONFIG
+    jq --arg dom "$bad_domain" '.routing.rules += [{"type": "field", "outboundTag": "blocked", "domain": [$dom]}]' $XRAY_CONFIG > /tmp/x.json && mv /tmp/x.json $XRAY_CONFIG
     systemctl restart xray
     echo -e "\n${GREEN}✓ Domain [ $bad_domain ] telah disenaraihitamkan!${NC}"
     read -n 1 -s -r -p "Tekan mana-mana butang..."
@@ -125,7 +126,7 @@ routing_manager() {
             1) block_manager ;;
             2) domain_manager ;;
             3)
-                jq 'del(.routing.rules) | del(.outbounds[] | select(.tag | tr "[:upper:]" "[:lower:]" | contains("block")))' $XRAY_CONFIG > /tmp/x.json && mv /tmp/x.json $XRAY_CONFIG
+                jq '.routing.rules = []' $XRAY_CONFIG > /tmp/x.json && mv /tmp/x.json $XRAY_CONFIG
                 systemctl restart xray
                 echo -e "\n${GREEN}✓ Semua tetapan sekatan di-reset ke asal!${NC}"; sleep 2 ;;
             4) break ;;
@@ -147,7 +148,7 @@ create_account() {
         4) T_IP="172.66.40.170" ;;
     esac
     uuid=$(uuidgen)
-    jq ".inbounds.settings.clients += [{\"id\": \"$uuid\", \"email\": \"$username\"}] | .inbounds.settings.clients += [{\"id\": \"$uuid\", \"email\": \"$username\"}]" $XRAY_CONFIG > /tmp/x.json && mv /tmp/x.json $XRAY_CONFIG
+    jq ".inbounds[0].settings.clients += [{\"id\": \"$uuid\", \"email\": \"$username\"}] | .inbounds[1].settings.clients += [{\"id\": \"$uuid\", \"email\": \"$username\"}]" $XRAY_CONFIG > /tmp/x.json && mv /tmp/x.json $XRAY_CONFIG
     systemctl restart xray 2>/dev/null
     clear
     echo -e "${GREEN}✓ Akaun Berjaya Ditambah!${NC}"
