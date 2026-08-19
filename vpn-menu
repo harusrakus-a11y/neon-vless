@@ -28,21 +28,16 @@ URL_AKSES="${B1}${B2}/${USER_GH}/${REPO_GH}/${FILE_GH}?t=$(date +%s)"
 check_license() {
     local valid_keys=$(curl -sL -H "Cache-Control: no-cache" "$URL_AKSES")
     if [[ -z "$valid_keys" || "$valid_keys" == *"404"* ]]; then exit 1; fi
-    
     verify_process() {
         local input_key="$1"
         local match_line=$(echo "$valid_keys" | grep -w "^$input_key")
-        
         if [[ ! -z "$match_line" ]]; then
             if [[ "$match_line" == *"|"* ]]; then
                 local exp_date=$(echo "$match_line" | cut -d'|' -f2)
-                local current_epoch=$(date +%s)
-                local exp_epoch=$(date -d "$exp_date" +%s 2>/dev/null)
-                if [[ ! -z "$exp_epoch" ]] && [ "$current_epoch" -lt "$exp_epoch" ]; then
+                if [ "$(date +%s)" -lt "$(date -d "$exp_date" +%s 2>/dev/null)" ]; then
                     export USER_EXP_DATE="$exp_date"
                     return 0
                 else
-                    echo -e "\n${RED}✗ Akses Tamat Tempoh!${NC}"
                     exit 1
                 fi
             fi
@@ -68,22 +63,114 @@ show_dashboard() {
     echo -e " Target Fixed SNI : ${WHITE}${FIXED_HOST}${NC}"
     echo -e " Total Users      : ${GREEN}${TOTAL_USERS:-0} Users${NC}"
     echo -e "${CYAN}─────────────────────────────────────────────────────${NC}"
-    echo -e " ${PURPLE}• PORT & PROTOCOL DETAIL •${NC}"
-    echo -e "  ${GREEN}1.${NC} SSH / Dropbear       : Port 22, 109"
-    echo -e "  ${GREEN}2.${NC} VLESS WebSocket      : Port 80, 8080"
-    echo -e "  ${GREEN}3.${NC} VMESS WebSocket      : Port 8080"
-    echo -e "  ${GREEN}4.${NC} TROJAN WebSocket     : Port 8880"
-    echo -e "  ${GREEN}5.${NC} Semak Pengguna Aktif : (Live Checker)"
-    echo -e "  ${GREEN}6.${NC} Tukar Fixed Host     : (Change SNI)"
-    echo -e "  ${RED}7.${NC} Keluar"
+    echo -e " ${PURPLE}• MAIN MENU PROTOCOL & MANAGER •${NC}"
+    echo -e "  ${GREEN}[01]${NC} Create Account VLESS (Port 80/8080)"
+    echo -e "  ${GREEN}[02]${NC} Check Active User Login (Live)"
+    echo -e "  ${GREEN}[03]${NC} ROUTING MANAGER (Block/Domain)"
+    echo -e "  ${GREEN}[04]${NC} MENU BOT & BACKUP MANAGER"
+    echo -e "  ${GREEN}[05]${NC} DNS MANAGER (Cloudflare/Google)"
+    echo -e "  ${GREEN}[06]${NC} Change Target Fixed SNI / Domain"
+    echo -e "  ${RED}[07]${NC} Exit Script"
     echo -e "${CYAN}─────────────────────────────────────────────────────${NC}"
 }
 
+# ===================================================
+# SUB-MENU 1: ROUTING MANAGER
+# ===================================================
+routing_manager() {
+    while true; do
+        clear
+        echo -e "${CYAN}┌───────────────────────────────────────────────────┐${NC}"
+        echo -e "${CYAN}│${PURPLE}                 ROUTING MANAGER                   ${CYAN}│${NC}"
+        echo -e "${CYAN}└───────────────────────────────────────────────────┘${NC}"
+        echo -e " Current Mode   : ${GREEN}Custom${NC}"
+        echo -e " Active Rules   : ${YELLOW}0${NC}"
+        echo -e " Pending Change : ${WHITE}0${NC}"
+        echo -e "${CYAN}─────────────────────────────────────────────────────${NC}"
+        echo -e "  ${GREEN}[01]${NC} Routing Mode"
+        echo -e "  ${GREEN}[02]${NC} Direct Manager"
+        echo -e "  ${GREEN}[03]${NC} Block Manager"
+        echo -e "  ${GREEN}[04]${NC} Domain Manager"
+        echo -e "  ${GREEN}[05]${NC} Outbound Manager"
+        echo -e "  ${GREEN}[06]${NC} View Active Rules"
+        echo -e "  ${GREEN}[07]${NC} Test Configuration"
+        echo -e "  ${GREEN}[08]${NC} Apply Changes"
+        echo -e "  ${GREEN}[09]${NC} Reset Routing To Default"
+        echo -e "  ${RED}[10]${NC} Back to System VPS"
+        echo -e "${CYAN}─────────────────────────────────────────────────────${NC}"
+        read -p " Please select an option [01-10 or x]: " r_choice
+        case $r_choice in
+            10|x) break ;;
+            *) echo -e "${GREEN}Fungsi simulasi aktif!${NC}"; sleep 1 ;;
+        esac
+    done
+}
+
+# ===================================================
+# SUB-MENU 2: BOT & BACKUP MANAGER
+# ===================================================
+backup_manager() {
+    while true; do
+        clear
+        echo -e "${CYAN}┌───────────────────────────────────────────────────┐${NC}"
+        echo -e "${CYAN}│${PURPLE}              MENU BOT & BACKUP MANAGER            ${CYAN}│${NC}"
+        echo -e "${CYAN}└───────────────────────────────────────────────────┘${NC}"
+        echo -e " Your Bot Api     : ${RED}Not configured${NC}"
+        echo -e " Your Chat ID     : ${RED}Not configured${NC}"
+        echo -e " Bot Notification : ${RED}OFF${NC}"
+        echo -e "${CYAN}─────────────────────────────────────────────────────${NC}"
+        echo -e "  ${GREEN}[01]${NC} Make Bot Api & Chat ID"
+        echo -e "  ${GREEN}[02]${NC} Test Bot Connection"
+        echo -e "  ${GREEN}[03]${NC} Turn ON Bot Notification"
+        echo -e "  ${GREEN}[04]${NC} Change Bot Api & Chat ID"
+        echo -e "  ${GREEN}[05]${NC} Backup Database"
+        echo -e "  ${GREEN}[06]${NC} Restore Database"
+        echo -e "  ${GREEN}[07]${NC} Set Autobackup"
+        echo -e "  ${RED}[08]${NC} Back to System VPS"
+        echo -e "${CYAN}─────────────────────────────────────────────────────${NC}"
+        read -p " Please select an option [01-08 or x]: " b_choice
+        case $b_choice in
+            8|x) break ;;
+            *) echo -e "${GREEN}Fungsi simulasi aktif!${NC}"; sleep 1 ;;
+        esac
+    done
+}
+
+# ===================================================
+# SUB-MENU 3: DNS MANAGER
+# ===================================================
+dns_manager() {
+    while true; do
+        clear
+        echo -e "${CYAN}┌───────────────────────────────────────────────────┐${NC}"
+        echo -e "${CYAN}│${PURPLE}                    DNS MANAGER                    ${CYAN}│${NC}"
+        echo -e "${CYAN}└───────────────────────────────────────────────────┘${NC}"
+        echo -e " Current DNS     : ${GREEN}Cloudflare${NC}"
+        echo -e " Primary DNS     : ${YELLOW}1.1.1.1${NC}"
+        echo -e " Secondary DNS   : ${YELLOW}1.0.0.1${NC}"
+        echo -e " DNS Resolution  : ${GREEN}OK${NC}"
+        echo -e "${CYAN}─────────────────────────────────────────────────────${NC}"
+        echo -e "  ${GREEN}[01]${NC} Cloudflare DNS"
+        echo -e "  ${GREEN}[02]${NC} Google DNS"
+        echo -e "  ${GREEN}[03]${NC} Quad9 DNS"
+        echo -e "  ${GREEN}[04]${NC} AdGuard DNS"
+        echo -e "  ${GREEN}[05]${NC} Custom DNS"
+        echo -e "  ${GREEN}[06]${NC} DNS Benchmark"
+        echo -e "  ${GREEN}[07]${NC} DNS Diagnostic"
+        echo -e "  ${GREEN}[08]${NC} Restore System DNS"
+        echo -e "  ${RED}[09]${NC} Back to System VPS"
+        echo -e "${CYAN}─────────────────────────────────────────────────────${NC}"
+        read -p " Select option: " d_choice
+        case $d_choice in
+            9|x) break ;;
+            *) echo -e "${GREEN}DNS dikemaskini (Simulasi)!${NC}"; sleep 1 ;;
+        esac
+    done
+}
+
 create_account() {
-    local proto="$1"
-    local port="$2"
     show_dashboard
-    echo -e "${YELLOW}[ JANA AKAUN ${proto^^} PREMIUM ]${NC}\n"
+    echo -e "${YELLOW}[ JANA AKAUN VLESS MULTI-TELCO ]${NC}\n"
     read -p " Masukkan Nama Pengguna Baru: " username
     if [[ -z "$username" ]]; then return; fi
     
@@ -98,11 +185,8 @@ create_account() {
     esac
 
     uuid=$(uuidgen)
-    
-    # PERBAIKAN UTAMA: Menggunakan index [0] dan [1] secara berasingan untuk mengelakkan kerosakan fail JSON
     jq ".inbounds[0].settings.clients += [{\"id\": \"$uuid\", \"email\": \"$username\"}] |
         .inbounds[1].settings.clients += [{\"id\": \"$uuid\", \"email\": \"$username\"}]" $XRAY_CONFIG > /tmp/x.json && mv /tmp/x.json $XRAY_CONFIG
-        
     systemctl restart xray 2>/dev/null
     
     clear
@@ -111,11 +195,7 @@ create_account() {
     echo -e " 👤 Nama Pengguna : ${YELLOW}$username${NC}"
     echo -e " 🌐 Anycast IP    : ${GREEN}$T_IP${NC}"
     echo -e "${CYAN}─────────────────────────────────────────────────────${NC}"
-    echo -e " ${CYAN}Port 80:${NC}"
-    echo -e "${GREEN}vless://${uuid}@${T_IP}:80?encryption=none&type=ws&host=${FIXED_HOST}&path=%2F#${username}${NC}\n"
-    echo -e " ${CYAN}Port 8080:${NC}"
-    echo -e "${GREEN}vless://${uuid}@${T_IP}:8080?encryption=none&type=ws&host=${FIXED_HOST}&path=%2F#${username}${NC}"
-    echo -e "${CYAN}─────────────────────────────────────────────────────${NC}"
+    echo -e " Port 80: ${GREEN}vless://${uuid}@${T_IP}:80?encryption=none&type=ws&host=${FIXED_HOST}&path=%2F#${username}${NC}\n"
     read -n 1 -s -r -p "Tekan mana-mana butang..."
 }
 
@@ -136,11 +216,11 @@ while true; do
     show_dashboard
     read -p " Sila Pilih Menu Anda [1-7]: " pilihan
     case $pilihan in
-        1) create_account "ssh" "22" ;;
-        2) create_account "vless" "80" ;;
-        3) create_account "vless" "8080" ;;
-        4) create_account "vless" "80" ;;
-        5) check_login ;;
+        1) create_account ;;
+        2) check_login ;;
+        3) routing_manager ;;
+        4) backup_manager ;;
+        5) dns_manager ;;
         6) change_host ;;
         7) clear; exit 0 ;;
     esac
