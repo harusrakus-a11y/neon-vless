@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# ===================================================
+# TEMA WARNA (RAKUS SCRIPT PREMIUM STYLE)
+# ===================================================
 CYAN='\033[0;36m'
 PURPLE='\033[0;35m'
 GREEN='\033[0;32m'
@@ -16,7 +19,7 @@ VERSION="Rakus Script v1.0"
 UPTIME=$(uptime -p | sed 's/up //')
 TOTAL_USERS=$(jq '.inbounds[0].settings.clients | length' $XRAY_CONFIG 2>/dev/null)
 
-if [ -f "$HOST_FILE" ]; then FIXED_HOST=$(cat "$HOST_FILE"); else FIXED_HOST="harus.uhuk.fun"; echo "$HOST_FILE"; fi
+if [ -f "$HOST_FILE" ]; then FIXED_HOST=$(cat "$HOST_FILE"); else FIXED_HOST="harus.uhuk.fun"; echo "$FIXED_HOST" > "$HOST_FILE"; fi
 
 B1="https://raw.github"
 B2="usercontent.com"
@@ -148,7 +151,7 @@ create_account() {
     esac
     uuid=$(uuidgen)
     
-    # LOGIK PEMBETULAN MUTLAK: Menggunakan index objek secara tepat .inbounds[0] & .inbounds[1]
+    # KUNCI JAWAPAN PEMBETULAN: Memasukkan data ke index tatasusunan .inbounds[0] dan .inbounds[1] secara spesifik
     jq ".inbounds[0].settings.clients += [{\"id\": \"$uuid\", \"email\": \"$username\"}] |
         .inbounds[1].settings.clients += [{\"id\": \"$uuid\", \"email\": \"$username\"}]" $XRAY_CONFIG > /tmp/x.json && mv /tmp/x.json $XRAY_CONFIG
         
