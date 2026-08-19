@@ -5,29 +5,61 @@
         "error": "/var/log/xray/error.log"
     },
     "dns": {
-        "hosts": {
-            "geosite:category-ads-all": "127.0.0.1"
-        },
         "servers": [
-            "1.1.1.1",
-            "8.8.8.8"
+            "94.140.14.14",
+            "94.140.15.15",
+            "1.1.1.1"
         ]
     },
     "inbounds": [
         {
             "port": 80,
             "protocol": "vless",
-            "settings": { "clients": [], "decryption": "none" },
-            "streamSettings": { "network": "ws", "security": "none", "wsSettings": { "path": "/" } }
+            "settings": {
+                "clients": [],
+                "decryption": "none"
+            },
+            "streamSettings": {
+                "network": "ws",
+                "security": "none",
+                "wsSettings": {
+                    "path": "/"
+                }
+            }
         },
         {
             "port": 8080,
             "protocol": "vless",
-            "settings": { "clients": [], "decryption": "none" },
-            "streamSettings": { "network": "ws", "security": "none", "wsSettings": { "path": "/" } }
+            "settings": {
+                "clients": [],
+                "decryption": "none"
+            },
+            "streamSettings": {
+                "network": "ws",
+                "security": "none",
+                "wsSettings": {
+                    "path": "/"
+                }
+            }
         }
     ],
     "outbounds": [
-        { "protocol": "freedom", "tag": "direct" }
-    ]
+        {
+            "protocol": "freedom",
+            "tag": "direct",
+            "settings": {
+                "domainStrategy": "UseIP"
+            }
+        }
+    ],
+    "routing": {
+        "domainStrategy": "IPOnDemand",
+        "rules": [
+            {
+                "type": "field",
+                "outboundTag": "direct",
+                "network": "tcp,udp"
+            }
+        ]
+    }
 }
