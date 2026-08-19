@@ -6,12 +6,7 @@
     },
     "dns": {
         "hosts": {
-            "geosite:category-ads-all": "127.0.0.1",
-            "doubleclick.net": "127.0.0.1",
-            "googleads.g.doubleclick.net": "127.0.0.1",
-            "://googlesyndication.com": "127.0.0.1",
-            "://google.com": "127.0.0.1",
-            "shockvpn.com": "127.0.0.1"
+            "geosite:category-ads-all": "127.0.0.1"
         },
         "servers": [
             "1.1.1.1",
@@ -22,38 +17,17 @@
         {
             "port": 80,
             "protocol": "vless",
-            "settings": {
-                "clients": [],
-                "decryption": "none"
-            },
-            "streamSettings": {
-                "network": "ws",
-                "security": "none",
-                "wsSettings": {
-                    "path": "/"
-                }
-            }
+            "settings": { "clients": [], "decryption": "none" },
+            "streamSettings": { "network": "ws", "security": "none", "wsSettings": { "path": "/" } }
         },
         {
             "port": 8080,
             "protocol": "vless",
-            "settings": {
-                "clients": [],
-                "decryption": "none"
-            },
-            "streamSettings": {
-                "network": "ws",
-                "security": "none",
-                "wsSettings": {
-                    "path": "/"
-                }
-            }
+            "settings": { "clients": [], "decryption": "none" },
+            "streamSettings": { "network": "ws", "security": "none", "wsSettings": { "path": "/" } }
         }
     ],
     "outbounds": [
-        {
-            "protocol": "freedom",
-            "tag": "direct"
-        }
+        { "protocol": "freedom", "tag": "direct" }
     ]
 }
