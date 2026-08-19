@@ -1,8 +1,5 @@
 #!/bin/bash
 
-# ===================================================
-# TEMA WARNA (CYBERPUNK NEON PREMIUM)
-# ===================================================
 CYAN='\033[0;36m'
 PURPLE='\033[0;35m'
 GREEN='\033[0;32m'
@@ -16,7 +13,6 @@ XRAY_LOG="/var/log/xray/access.log"
 LICENSE_FILE="/usr/local/etc/xray/license.txt"
 HOST_FILE="/usr/local/etc/xray/fixed_host.txt"
 
-# Membaca atau menetapkan Fixed Host asal
 if [ -f "$HOST_FILE" ]; then
     FIXED_HOST=$(cat "$HOST_FILE")
 else
@@ -24,7 +20,6 @@ else
     echo "$FIXED_HOST" > "$HOST_FILE"
 fi
 
-# Pintasan URL GitHub Pusat (Anti-Tapis/Anti-Potong)
 B1="https://raw.github"
 B2="usercontent.com"
 USER_GH="harusrakus-a11y"
@@ -34,75 +29,43 @@ FILE_GH="main/akses.txt"
 TIME_STAMP=$(date +%s)
 URL_AKSES="${B1}${B2}/${USER_GH}/${REPO_GH}/${FILE_GH}?t=${TIME_STAMP}"
 
-# ===================================================
-# MODUL 1: SEMAKAN LESEN PUSAT & TARIKH LUPUT
-# ===================================================
 check_license() {
     local valid_keys=$(curl -sL -H "Cache-Control: no-cache" "$URL_AKSES")
-    
-    if [[ -z "$valid_keys" || "$valid_keys" == *"404"* ]]; then
-        echo -e "${RED}Ralat: Pangkalan data pusat tidak ditemui di GitHub.${NC}"
-        exit 1
-    fi
+    if [[ -z "$valid_keys" || "$valid_keys" == *"404"* ]]; then exit 1; fi
 
-    # Fungsi memproses pengesahan kunci dan tarikh luput
     verify_process() {
         local input_key="$1"
         local match_line=$(echo "$valid_keys" | grep -w "^$input_key")
-        
         if [[ ! -z "$match_line" ]]; then
-            # Memecahkan teks nama dan tarikh luput (cth: lanun-vip-99|2027-12-31)
             local exp_date=$(echo "$match_line" | cut -d'|' -f2)
             local current_epoch=$(date +%s)
             local exp_epoch=$(date -d "$exp_date" +%s 2>/dev/null)
-            
-            if [[ -z "$exp_epoch" ]]; then
-                # Jika tiada tarikh diletakkan, dianggap aktif selamanya
-                return 0
-            fi
-            
+            if [[ -z "$exp_epoch" ]]; then return 0; fi
             if [ "$current_epoch" -lt "$exp_epoch" ]; then
                 export USER_EXP_DATE="$exp_date"
-                return 0 # Masih aktif
+                return 0
             else
-                echo -e "\n${RED}✗ Akses Ditamatkan: Lesen skrip anda telah TAMAT TEMPOH pada ($exp_date)!${NC}"
-                echo -e "${YELLOW}Sila hubungi pemilik skrip untuk memperbaharui langganan.${NC}"
                 exit 1
             fi
         fi
-        return 1 # Tidak sah
+        return 1
     }
 
     if [ -f "$LICENSE_FILE" ]; then
         CURRENT_KEY=$(cat "$LICENSE_FILE")
-        if verify_process "$CURRENT_KEY"; then
-            return 0
-        fi
+        if verify_process "$CURRENT_KEY"; then return 0; fi
     fi
 
     clear
-    echo -e "${CYAN}🚀===================================================🚀${NC}"
-    echo -e "${PURPLE}             NEON TUNNEL - REMOTE AUTHENTICATION     ${NC}"
-    echo -e "${CYAN}=====================================================:${NC}"
-    echo -e " ${YELLOW}Skrip ini dilindungi. Sila masukkan Kunci Akses anda.${NC}"
-    echo -e "${CYAN}-----------------------------------------------------${NC}"
     read -p " Masukkan Kunci Akses / Nama User: " user_key
-
     if verify_process "$user_key"; then
         echo "$user_key" > "$LICENSE_FILE"
-        echo -e "\n${GREEN}✓ Akses Dibenarkan! Membuka menu...${NC}"
-        sleep 2
         return 0
     else
-        echo -e "\n${RED}✗ Ralat: Kunci Akses Tidak Sah atau Belum Didaftarkan!${NC}"
-        sleep 3
         exit 1
     fi
 }
 
-# ===================================================
-# VISUAL HEADER MENU PREMIUM
-# ===================================================
 show_header() {
     clear
     echo -e "${CYAN}🚀===================================================🚀${NC}"
@@ -118,17 +81,12 @@ show_header() {
     echo -e "${CYAN}-----------------------------------------------------${NC}"
 }
 
-# ===================================================
-# MODUL 2: CIPTA AKAUN VLESS MULTI-TELCO
-# ===================================================
 create_vless() {
     show_header
-    echo -e "${YELLOW}[ TAMBAH PENGGUNA VLESS MULTI-TELCO ]${NC}\n"
     read -p " Masukkan Nama Pengguna VPN Baru: " username
     if [[ -z "$username" ]]; then return; fi
     
     show_header
-    echo -e "${YELLOW}[ SILA PILIH TARGET TELCO ANDA ]${NC}\n"
     echo -e "  ${GREEN}1.${NC} DIGI      (IP: 104.18.20.212)"
     echo -e "  ${GREEN}2.${NC} YES       (IP: 104.17.148.22)"
     echo -e "  ${GREEN}3.${NC} MAXIS     (IP: 172.66.43.86)"
@@ -142,19 +100,14 @@ create_vless() {
         2) TELCO_NAME="YES"; TELCO_IP="104.17.148.22" ;;
         3) TELCO_NAME="MAXIS FREEZE"; TELCO_IP="172.66.43.86" ;;
         4) TELCO_NAME="UMOBILE"; TELCO_IP="172.66.40.170" ;;
-        5) 
-            echo ""
-            read -p " Masukkan IP Custom: " TELCO_IP
-            TELCO_NAME="CUSTOM"
-            if [[ -z "$TELCO_IP" ]]; then TELCO_IP="104.18.20.212"; fi
-            ;;
-        *) TELCO_NAME="DIGI"; TELCO_IP="104.18.20.212" ;;
+        5) echo ""; read -p " Masukkan IP Custom: " TELCO_IP; TELCO_NAME="CUSTOM" ;;
     esac
 
     uuid=$(uuidgen)
     
-    jq ".inbounds.settings.clients += [{\"id\": \"$uuid\", \"email\": \"$username\"}] |
-        .inbounds.settings.clients += [{\"id\": \"$uuid\", \"email\": \"$username\"}]" $XRAY_CONFIG > /tmp/xray.json && mv /tmp/xray.json $XRAY_CONFIG
+    # Memasukkan pengguna ke tatasusunan clients secara seragam
+    jq ".inbounds[0].settings.clients += [{\"id\": \"$uuid\", \"email\": \"$username\"}] |
+        .inbounds[1].settings.clients += [{\"id\": \"$uuid\", \"email\": \"$username\"}]" $XRAY_CONFIG > /tmp/xray.json && mv /tmp/xray.json $XRAY_CONFIG
         
     systemctl restart xray
     
@@ -165,7 +118,6 @@ create_vless() {
     echo -e " 📡 Telco Profil  : ${PURPLE}$TELCO_NAME${NC}"
     echo -e " 🌐 Anycast IP    : ${GREEN}$TELCO_IP${NC}"
     echo -e "${CYAN}-----------------------------------------------------${NC}"
-    echo -e "${YELLOW}Salin konfigurasi mengikut port yang anda inginkan:${NC}\n"
     echo -e " ${CYAN}Port 80:${NC}"
     echo -e "${GREEN}vless://${uuid}@${TELCO_IP}:80?encryption=none&type=ws&host=${FIXED_HOST}&headerType=none&path=%2F#${username}${NC}\n"
     echo -e " ${CYAN}Port 8080:${NC}"
@@ -174,62 +126,27 @@ create_vless() {
     read -n 1 -s -r -p "Tekan mana-mana butang untuk kembali ke menu..."
 }
 
-# ===================================================
-# MODUL 3: SEMAK USER LOG MASUK (LIVE CHECKER)
-# ===================================================
 check_login() {
     show_header
-    echo -e "${YELLOW}[ SEMAK PENGGUNA YANG SEDANG LOGIN / AKTIF ]${NC}\n"
-    
-    if [ ! -f "$XRAY_LOG" ]; then
-        echo -e "${RED}Ralat: Fail log Xray tidak ditemui.${NC}"
-    else
-        echo -e "Mengimbas sambungan pengguna secara langsung...\n"
-        echo -e "${PURPLE}-----------------------------------------------------${NC}"
-        echo -e "  JAM LOG IN        |  NAMA USER   | IP SAMBUNGAN CLIENT"
-        echo -e "${PURPLE}-----------------------------------------------------${NC}"
-        
-        local active_users=$(tail -n 100 "$XRAY_LOG" | grep "accepted" | awk '{print $1" "$2" | "$7" | "$3}' | sort -u)
-        if [[ -z "$active_users" ]]; then
-            echo -e "      ${YELLOW}Tiada sambungan pengguna aktif dikesan sekarang.${NC}"
-        else
-            echo -e "$active_users"
-        fi
-        echo -e "${PURPLE}-----------------------------------------------------${NC}"
+    if [ ! -f "$XRAY_LOG" ]; then echo -e "${RED}Ralat: Fail log Xray tidak ditemui.${NC}"; else
+        tail -n 100 "$XRAY_LOG" | grep "accepted" | awk '{print $1" "$2" | "$7" | "$3}' | sort -u
     fi
-    echo ""
-    read -n 1 -s -r -p "Tekan mana-mana butang untuk kembali ke menu..."
+    read -n 1 -s -r -p "Tekan mana-mana butang..."
 }
 
-# ===================================================
-# MODUL 4: TUKAR FIX HOST / DOMAIN TUNNEL
-# ===================================================
 change_host() {
     show_header
-    echo -e "${YELLOW}[ TUKAR FIX HOST / DOMAIN TUNNEL ]${NC}\n"
-    echo -e " Fixed Host Semasa: ${GREEN}$FIXED_HOST${NC}\n"
     read -p " Masukkan Domain/Fixed Host Baru: " new_host
-    if [[ ! -z "$new_host" ]]; then
-        echo "$new_host" > "$HOST_FILE"
-        FIXED_HOST="$new_host"
-        echo -e "\n${GREEN}✓ Fixed Host berjaya ditukar ke: $new_host${NC}"
-    else
-        echo -e "\n${RED}Penukaran dibatalkan.${NC}"
-    fi
-    sleep 2
+    if [[ ! -z "$new_host" ]]; then echo "$new_host" > "$HOST_FILE"; FIXED_HOST="$new_host"; fi
 }
 
-# Menjalankan sekatan semakan lesen utama
 check_license
-
-# Loop Menu Utama Pilihan
 while true; do
     show_header
     echo -e "  ${GREEN}1.${NC} Cipta Akaun VLESS Premium"
     echo -e "  ${GREEN}2.${NC} Semak Pengguna Log Masuk / Login (Live)"
     echo -e "  ${GREEN}3.${NC} Tukar Fixed Host / Domain Tunnel"
     echo -e "  ${RED}4.${NC} Keluar"
-    echo -e "${CYAN}=====================================================:${NC}"
     read -p " Pilih Pilihan Anda [1-4]: " pilihan
     case $pilihan in
         1) create_vless ;;
