@@ -8,21 +8,122 @@
         {
             "port": 80,
             "protocol": "vless",
-            "settings": { "clients": [], "decryption": "none" },
-            "streamSettings": { "network": "ws", "security": "none", "wsSettings": { "path": "/" } }
+            "settings": {
+                "clients": [],
+                "decryption": "none"
+            },
+            "streamSettings": {
+                "network": "ws",
+                "security": "none",
+                "wsSettings": {
+                    "path": "/"
+                }
+            }
         },
         {
             "port": 8080,
-            "protocol": "vmess",
-            "settings": { "clients": [] },
-            "streamSettings": { "network": "ws", "security": "none", "wsSettings": { "path": "/vmess" } }
-        },
-        {
-            "port": 8880,
-            "protocol": "trojan",
-            "settings": { "clients": [], "password": "neon" },
-            "streamSettings": { "network": "ws", "security": "none", "wsSettings": { "path": "/trojan" } }
+            "protocol": "vless",
+            "settings": {
+                "clients": [],
+                "decryption": "none"
+            },
+            "streamSettings": {
+                "network": "ws",
+                "security": "none",
+                "wsSettings": {
+                    "path": "/"
+                }
+            }
         }
     ],
-    "outbounds": [{ "protocol": "freedom" }]
+    "outbounds": [
+        {
+            "protocol": "freedom",
+            "tag": "direct"
+        },
+        {
+            "protocol": "blackhole",
+            "tag": "blocked"
+        }
+    ],
+    "routing": {
+        "domainStrategy": "IPOnDemand",
+        "rules": [
+            {
+                "type": "field",
+                "outboundTag": "blocked",
+                "domain": [
+                    "domain:doubleclick.net",
+                    "domain:googleads.g.doubleclick.net",
+                    "domain:://googlesyndication.com",
+                    "domain:://google.com",
+                    "domain:adsystem.com",
+                    "domain:google-analytics.com",
+                    "domain:://google.com",
+                    "domain:adclick",
+                    "domain:popads.net",
+                    "domain:popcash.net",
+                    "domain:propellerads.com",
+                    "domain:mgid.com",
+                    "domain:taboola.com",
+                    "domain:outbrain.com",
+                    "domain:criteo.com",
+                    "domain:inmobi.com",
+                    "domain:adnxs.com",
+                    "domain:rubiconproject.com",
+                    "domain:pubmatic.com",
+                    "domain:openx.net",
+                    "domain:adform.net",
+                    "domain:smartadserver.com",
+                    "domain:casalemedia.com",
+                    "domain:yieldmo.com",
+                    "domain:triplelift.com",
+                    "domain:sharethrough.com",
+                    "domain:adcolony.com",
+                    "domain:unityads",
+                    "domain:applovin.com",
+                    "domain:ironsrc.com",
+                    "domain:chartboost.com",
+                    "domain:vungle.com",
+                    "domain:adserver",
+                    "domain:trafficjunky.com",
+                    "domain:exoclick.com",
+                    "domain:juicyads.com",
+                    "domain:ero-advertising.com",
+                    "domain:adsterra.com",
+                    "domain:clickadu.com",
+                    "domain:hilltopads.com",
+                    "domain:activerevenue.com",
+                    "domain:adstargets.com",
+                    "domain:bidvertiser.com",
+                    "domain:revenuehits.com",
+                    "domain:skimresources.com",
+                    "domain:viglink.com",
+                    "domain:amazon-adsystem.com",
+                    "domain:assoc-amazon.com",
+                    "domain:flurry.com",
+                    "domain:scorecardresearch.com",
+                    "domain:crashlytics.com",
+                    "domain:mixpanel.com",
+                    "domain:amplitude.com",
+                    "domain:hotjar.com",
+                    "domain:crazyegg.com",
+                    "domain:optimizely.com",
+                    "domain:segment.io",
+                    "domain:newrelic.com",
+                    "domain:datadoghq.com",
+                    "domain:bugsnag.com",
+                    "domain:sentry.io",
+                    "domain:shockvpn",
+                    "keyword:adserver",
+                    "keyword:analytics",
+                    "keyword:telemetry",
+                    "keyword:advertisement",
+                    "keyword:tracker",
+                    "keyword:popunder",
+                    "keyword:bannerads"
+                ]
+            }
+        ]
+    }
 }
